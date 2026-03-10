@@ -31,8 +31,8 @@ export async function GET() {
           description: description || `مشروع في ${entry.name}`,
           status: 'ACTIVE',
           color: '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'),
-          lastActivity: fs.statSync(projectPath).mtime.toISOString(),
-          createdAt: fs.statSync(projectPath).birthtime.toISOString(),
+          last_activity: fs.statSync(projectPath).mtime.toISOString(),
+          created_at: fs.statSync(projectPath).birthtime.toISOString(),
           path: projectPath
         };
       });

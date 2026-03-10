@@ -1,6 +1,10 @@
 'use client';
 
-import { useState, use } from 'react';
+import { 
+  useState, 
+  use,
+  useEffect
+} from 'react';
 import { useRouter } from 'next/navigation';
 import { useStore } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,7 +27,10 @@ import {
   GitBranch,
   ExternalLink,
   Save,
-  X
+  X,
+  Brain,
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 import type { Task, TaskStatus, TaskPriority, Note } from '@/types';
@@ -47,18 +54,51 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     addNote,
     updateNote,
     deleteNote,
+    loadProjectData,
+    loading: storeLoading
   } = useStore();
 
+  useEffect(() => {
+    if (id) {
+      loadProjectData(id);
+    }
+  }, [id, loadProjectData]);
+
   const project = projects.find(p => p.id === id);
-  const projectTasks = tasks.filter(t => t.projectId === id);
-  const projectNotes = notes.filter(n => n.projectId === id);
-  const projectFiles = files.filter(f => f.projectId === id);
-  const projectActivities = activities.filter(a => a.projectId === id);
+  const projectTasks = tasks.filter(t => t.project_id === id);
+  const projectNotes = notes.filter(n => n.project_id === id);
+  const projectFiles = files.filter(f => f.project_id === id);
+  const projectActivities = activities.filter(a => a.project_id === id);
 
   const [newTask, setNewTask] = useState({ title: '', description: '', priority: 'MEDIUM' as TaskPriority });
   const [newNote, setNewNote] = useState('');
   const [editingTask, setEditingTask] = useState<string | null>(null);
   const [editingNote, setEditingNote] = useState<string | null>(null);
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const handleGetAiSummary = async () => {
+    setAiLoading(true);
+    setAiSummary(null);
+    try {
+      const response = await fetch('/api/ai-summary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project,
+          tasks: projectTasks,
+          notes: projectNotes,
+          activities: projectActivities,
+        }),
+      });
+      const data = await response.json();
+      if (data.summary) setAiSummary(data.summary);
+    } catch (error) {
+      console.error('AI Summary failed:', error);
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   if (!project) {
     return (
@@ -75,7 +115,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     e.preventDefault();
     if (newTask.title.trim()) {
       addTask({
-        projectId: id,
+        project_id: id,
         title: newTask.title,
         description: newTask.description,
         status: 'TODO',
@@ -88,7 +128,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const handleAddNote = () => {
     if (newNote.trim()) {
       addNote({
-        projectId: id,
+        project_id: id,
         content: newNote,
       });
       setNewNote('');
@@ -169,16 +209,16 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           </div>
         </div>
         <div className="flex gap-2">
-          {project.githubUrl && (
-            <a href={project.githubUrl} target="_blank" rel="noopener noreferrer">
+          {project.github_url && (
+            <a href={project.github_url} target="_blank" rel="noopener noreferrer">
               <Button variant="outline" size="sm">
                 <GitBranch className="h-4 w-4 ml-2" />
                 GitHub
               </Button>
             </a>
           )}
-          {project.websiteUrl && (
-            <a href={project.websiteUrl} target="_blank" rel="noopener noreferrer">
+          {project.website_url && (
+            <a href={project.website_url} target="_blank" rel="noopener noreferrer">
               <Button variant="outline" size="sm">
                 <ExternalLink className="h-4 w-4 ml-2" />
                 الموقع
@@ -215,6 +255,41 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           </CardContent>
         </Card>
       </div>
+
+      {/* AI Summary Card */}
+      <Card className="mb-6 border-violet-200 bg-gradient-to-br from-violet-50 to-blue-50">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-violet-100 rounded-lg">
+                <Brain className="h-5 w-5 text-violet-600" />
+              </div>
+              <h3 className="font-semibold text-violet-900">ملخص الذكاء الاصطناعي</h3>
+            </div>
+            <button
+              onClick={handleGetAiSummary}
+              disabled={aiLoading}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-60 transition-colors"
+            >
+              {aiLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              {aiLoading ? 'جاري التحليل...' : 'أين توقفت؟'}
+            </button>
+          </div>
+          {aiSummary ? (
+            <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-line bg-white/60 rounded-lg p-3 border border-violet-100">
+              {aiSummary}
+            </div>
+          ) : (
+            <p className="text-sm text-violet-600/70 italic">
+              اضغط على "أين توقفت؟" ليقوم الذكاء الاصطناعي بتحليل مشروعك وتذكيرك بما تبقى.
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Tabs */}
       <div className="flex gap-1 mb-6 border-b border-gray-200">
@@ -309,7 +384,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                         <p className="text-sm text-gray-500 mt-1">{task.description}</p>
                       )}
                       <p className="text-xs text-gray-400 mt-2">
-                        {getStatusLabel(task.status)} • {formatRelativeTime(task.createdAt)}
+                        {getStatusLabel(task.status)} • {formatRelativeTime(task.created_at)}
                       </p>
                     </div>
                     <div className="flex gap-1">
@@ -387,7 +462,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-gray-400">
-                          {formatRelativeTime(note.createdAt)}
+                          {formatRelativeTime(note.created_at)}
                         </span>
                         <button
                           onClick={() => deleteNote(note.id)}
@@ -429,13 +504,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   <CardContent className="p-4 flex items-center gap-3">
                     <FileText className="h-5 w-5 text-gray-400" />
                     <div className="flex-1">
-                      <p className="font-medium">{file.fileName}</p>
+                      <p className="font-medium">{file.file_name}</p>
                       <p className="text-xs text-gray-400">
-                        {file.fileType} • {(file.fileSize / 1024).toFixed(1)} KB
+                        {file.file_type} • {(file.file_size / 1024).toFixed(1)} KB
                       </p>
                     </div>
                     <span className="text-xs text-gray-400">
-                      {formatDate(file.createdAt)}
+                      {formatDate(file.created_at)}
                     </span>
                   </CardContent>
                 </Card>
@@ -458,7 +533,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <div className="flex-1">
                   <p className="font-medium">{getActivityText(activity.action)}</p>
                   <p className="text-xs text-gray-400">
-                    {formatRelativeTime(activity.createdAt)}
+                    {formatRelativeTime(activity.created_at)}
                   </p>
                 </div>
               </CardContent>

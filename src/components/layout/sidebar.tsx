@@ -1,14 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useStore } from '@/lib/store';
 import { 
   LayoutDashboard, 
   FolderKanban, 
   Search, 
   Settings,
   Brain,
-  Plus
+  Plus,
+  LogOut,
+  User
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -21,6 +24,13 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, profile, signOut } = useStore();
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/login');
+  };
 
   return (
     <div className="flex h-screen w-64 flex-col bg-gray-900 text-white">
@@ -70,9 +80,30 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="px-6 py-4 border-t border-gray-800">
-        <p className="text-xs text-gray-500">© 2026 Memory AI</p>
+      {/* Footer / User Profile */}
+      <div className="px-4 py-4 border-t border-gray-800">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 border border-gray-700">
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="User Avatar" className="h-full w-full rounded-full object-cover" />
+            ) : (
+              <User className="h-5 w-5 text-gray-400" />
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-white truncate">
+              {profile?.full_name || user?.email?.split('@')[0] || 'المستخدم'}
+            </p>
+            <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+          </div>
+        </div>
+        <button
+          onClick={handleSignOut}
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-gray-800 px-3 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-gray-700 hover:text-white"
+        >
+          <LogOut className="h-4 w-4" />
+          تسجيل الخروج
+        </button>
       </div>
     </div>
   );

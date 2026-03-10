@@ -2,52 +2,61 @@ export type ProjectStatus = 'ACTIVE' | 'PAUSED' | 'COMPLETED';
 export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE';
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH';
 
+export interface Profile {
+  id: string;
+  full_name?: string;
+  avatar_url?: string;
+  email: string;
+  updated_at: string;
+  created_at: string;
+}
+
 export interface Project {
   id: string;
   name: string;
   description: string;
-  githubUrl?: string;
-  websiteUrl?: string;
+  github_url?: string;
+  website_url?: string;
   status: ProjectStatus;
   color: string;
-  lastActivity: string;
-  createdAt: string;
+  last_activity: string;
+  created_at: string;
 }
 
 export interface Task {
   id: string;
-  projectId: string;
+  project_id: string;
   title: string;
   description: string;
   status: TaskStatus;
   priority: TaskPriority;
-  dueDate?: string;
-  createdAt: string;
+  due_date?: string;
+  created_at: string;
 }
 
 export interface Note {
   id: string;
-  projectId: string;
+  project_id: string;
   content: string;
-  createdAt: string;
+  created_at: string;
 }
 
 export interface File {
   id: string;
-  projectId: string;
-  fileName: string;
-  filePath: string;
-  fileType: string;
-  fileSize: number;
-  createdAt: string;
+  project_id: string;
+  file_name: string;
+  file_path: string;
+  file_type: string;
+  file_size: number;
+  created_at: string;
 }
 
 export interface Activity {
   id: string;
-  projectId: string;
+  project_id: string;
   action: string;
-  entityType: 'task' | 'note' | 'file' | 'project';
-  entityId?: string;
+  entity_type: 'task' | 'note' | 'file' | 'project';
+  entity_id?: string;
   metadata?: Record<string, unknown>;
-  createdAt: string;
+  created_at: string;
 }

@@ -46,8 +46,8 @@ export default function ProjectsPage() {
   const [newProject, setNewProject] = useState({
     name: '',
     description: '',
-    githubUrl: '',
-    websiteUrl: '',
+    github_url: '',
+    website_url: '',
     status: 'ACTIVE' as const,
     color: COLORS[0],
   });
@@ -64,8 +64,8 @@ export default function ProjectsPage() {
       setNewProject({
         name: '',
         description: '',
-        githubUrl: '',
-        websiteUrl: '',
+        github_url: '',
+        website_url: '',
         status: 'ACTIVE',
         color: COLORS[0],
       });
@@ -163,16 +163,16 @@ export default function ProjectsPage() {
                   <label className="block text-sm font-medium mb-1">رابط GitHub</label>
                   <Input
                     placeholder="https://github.com/..."
-                    value={newProject.githubUrl}
-                    onChange={(e) => setNewProject({ ...newProject, githubUrl: e.target.value })}
+                    value={newProject.github_url}
+                    onChange={(e) => setNewProject({ ...newProject, github_url: e.target.value })}
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">رابط الموقع</label>
                   <Input
                     placeholder="https://..."
-                    value={newProject.websiteUrl}
-                    onChange={(e) => setNewProject({ ...newProject, websiteUrl: e.target.value })}
+                    value={newProject.website_url}
+                    onChange={(e) => setNewProject({ ...newProject, website_url: e.target.value })}
                   />
                 </div>
               </div>
@@ -208,7 +208,7 @@ export default function ProjectsPage() {
       {filteredProjects.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredProjects.map((project) => {
-            const projectTasks = tasks.filter(t => t.projectId === project.id);
+            const projectTasks = tasks.filter(t => t.project_id === project.id);
             const completedTasks = projectTasks.filter(t => t.status === 'DONE').length;
             const totalTasks = projectTasks.length;
             const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
@@ -256,15 +256,15 @@ export default function ProjectsPage() {
 
                     {/* Footer */}
                     <div className="flex items-center justify-between text-sm text-gray-400">
-                      <span>آخر نشاط: {formatRelativeTime(project.lastActivity)}</span>
+                      <span>آخر نشاط: {formatRelativeTime(project.last_activity)}</span>
                     </div>
 
                     {/* Links */}
-                    {(project.githubUrl || project.websiteUrl) && (
+                    {(project.github_url || project.website_url) && (
                       <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100">
-                        {project.githubUrl && (
+                        {project.github_url && (
                           <a 
-                            href={project.githubUrl}
+                            href={project.github_url}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
@@ -274,9 +274,9 @@ export default function ProjectsPage() {
                             GitHub
                           </a>
                         )}
-                        {project.websiteUrl && (
+                        {project.website_url && (
                           <a 
-                            href={project.websiteUrl}
+                            href={project.website_url}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}

@@ -16,7 +16,7 @@ import {
 import Link from 'next/link';
 
 export default function DashboardPage() {
-  const { projects, tasks, fetchProjects, getActiveProjects, getIncompleteTasks, getTodayTasks } = useStore();
+  const { projects, tasks, fetchProjects } = useStore();
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -29,33 +29,15 @@ export default function DashboardPage() {
     setLoading(false);
   };
 
-  const activeProjects = getActiveProjects();
-  const incompleteTasks = getIncompleteTasks();
-  const todayTasks = getTodayTasks();
-
-  const stats = [
-    {
-      label: 'المشاريع النشطة',
-      value: activeProjects.length,
-      icon: FolderKanban,
-      color: 'text-violet-600',
-      bgColor: 'bg-violet-100',
-    },
-    {
-      label: 'المهام المتبقية',
-      value: incompleteTasks.length,
-      icon: Clock,
-      color: 'text-amber-600',
-      bgColor: 'bg-amber-100',
-    },
-    {
-      label: 'مهام اليوم',
-      value: todayTasks.length,
-      icon: CheckCircle2,
-      color: 'text-green-600',
-      bgColor: 'bg-green-100',
-    },
-  ];
+  // Compute derived values inline to prevent Turbopack issues
+  const activeProjects = projects.filter(p => p.status === 'ACTIVE');
+  const incompleteTasks = tasks.filter(t => t.status !== 'DONE');
+  const todayTasks = tasks.filter(t => {
+    if (!t.due_date) return false;
+    const today = new Date();
+    const due = new Date(t.due_date);
+    return due.toDateString() === today.toDateString();
+  });
 
   return (
     <div className="p-8">
@@ -63,7 +45,7 @@ export default function DashboardPage() {
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">لوحة التحكم</h1>
-          <p className="text-gray-500 mt-1">مرحباً! إليك ملخص مشاريعك الحقيقية على هذا الجهاز</p>
+          <p className="text-gray-500 mt-1">مرحباً! إليك ملخص مشاريعك على هذا الجهاز</p>
         </div>
         <button 
           onClick={handleRefresh}
@@ -77,19 +59,39 @@ export default function DashboardPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {stats.map((stat) => (
-          <Card key={stat.label}>
-            <CardContent className="flex items-center gap-4 p-6">
-              <div className={cn("p-3 rounded-lg", stat.bgColor)}>
-                <stat.icon className={cn("h-6 w-6", stat.color)} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stat.value}</p>
-                <p className="text-sm text-gray-500">{stat.label}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        <Card>
+          <CardContent className="flex items-center gap-4 p-6">
+            <div className="p-3 rounded-lg bg-violet-100">
+              <FolderKanban className="h-6 w-6 text-violet-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{activeProjects.length}</p>
+              <p className="text-sm text-gray-500">المشاريع النشطة</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center gap-4 p-6">
+            <div className="p-3 rounded-lg bg-amber-100">
+              <Clock className="h-6 w-6 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{incompleteTasks.length}</p>
+              <p className="text-sm text-gray-500">المهام المتبقية</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center gap-4 p-6">
+            <div className="p-3 rounded-lg bg-green-100">
+              <CheckCircle2 className="h-6 w-6 text-green-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{todayTasks.length}</p>
+              <p className="text-sm text-gray-500">مهام اليوم</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -146,9 +148,8 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {activeProjects.slice(0, 5).map((project) => {
-              const projectTasks = tasks.filter(t => t.projectId === project.id && t.status !== 'DONE');
-              const completedTasks = tasks.filter(t => t.projectId === project.id && t.status === 'DONE').length;
-              const totalTasks = tasks.filter(t => t.projectId === project.id).length;
+              const completedTasks = tasks.filter(t => t.project_id === project.id && t.status === 'DONE').length;
+              const totalTasks = tasks.filter(t => t.project_id === project.id).length;
               
               return (
                 <Link 
@@ -165,12 +166,8 @@ export default function DashboardPage() {
                   </div>
                   <p className="text-sm text-gray-500 line-clamp-1 mb-3">{project.description}</p>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500">
-                      {completedTasks}/{totalTasks} مكتملة
-                    </span>
-                    <span className="text-gray-400">
-                      منذ {formatRelativeTime(project.lastActivity)}
-                    </span>
+                    <span className="text-gray-500">{completedTasks}/{totalTasks} مكتملة</span>
+                    <span className="text-gray-400">منذ {formatRelativeTime(project.last_activity)}</span>
                   </div>
                   {totalTasks > 0 && (
                     <div className="mt-2 h-1.5 bg-gray-200 rounded-full overflow-hidden">
@@ -201,10 +198,10 @@ export default function DashboardPage() {
         <CardContent>
           <div className="space-y-3">
             {activeProjects.filter(p => {
-              const daysSinceActivity = Math.floor(
-                (Date.now() - new Date(p.lastActivity).getTime()) / (1000 * 60 * 60 * 24)
+              const daysSince = Math.floor(
+                (Date.now() - new Date(p.last_activity).getTime()) / (1000 * 60 * 60 * 24)
               );
-              return daysSinceActivity >= 3;
+              return daysSince >= 3;
             }).map((project) => (
               <div 
                 key={project.id}
@@ -213,10 +210,10 @@ export default function DashboardPage() {
                 <AlertCircle className="h-5 w-5 text-amber-500" />
                 <div className="flex-1">
                   <p className="font-medium text-amber-900">
-                    لم تعمل على "{project.name}" منذ فترة
+                    لم تعمل على &quot;{project.name}&quot; منذ فترة
                   </p>
                   <p className="text-sm text-amber-700">
-                    آخر نشاط: {formatRelativeTime(project.lastActivity)}
+                    آخر نشاط: {formatRelativeTime(project.last_activity)}
                   </p>
                 </div>
                 <Link 
@@ -228,10 +225,10 @@ export default function DashboardPage() {
               </div>
             ))}
             {activeProjects.filter(p => {
-              const daysSinceActivity = Math.floor(
-                (Date.now() - new Date(p.lastActivity).getTime()) / (1000 * 60 * 60 * 24)
+              const daysSince = Math.floor(
+                (Date.now() - new Date(p.last_activity).getTime()) / (1000 * 60 * 60 * 24)
               );
-              return daysSinceActivity >= 3;
+              return daysSince >= 3;
             }).length === 0 && (
               <p className="text-gray-500">لا توجد تذكيرات حالياً</p>
             )}

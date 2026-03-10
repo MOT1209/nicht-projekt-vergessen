@@ -112,9 +112,9 @@ export default function SearchPage() {
                   </h2>
                   <div className="space-y-2">
                     {results.tasks.map((task) => {
-                      const project = projects.find(p => p.id === task.projectId);
+                      const project = projects.find(p => p.id === task.project_id);
                       return (
-                        <Link key={task.id} href={`/projects/${task.projectId}`}>
+                        <Link key={task.id} href={`/projects/${task.project_id}`}>
                           <Card className="hover:shadow-md transition-shadow cursor-pointer">
                             <CardContent className="p-4 flex items-center gap-3">
                               <div className={cn(
@@ -145,9 +145,9 @@ export default function SearchPage() {
                   </h2>
                   <div className="space-y-2">
                     {results.notes.map((note) => {
-                      const project = projects.find(p => p.id === note.projectId);
+                      const project = projects.find(p => p.id === note.project_id);
                       return (
-                        <Link key={note.id} href={`/projects/${note.projectId}`}>
+                        <Link key={note.id} href={`/projects/${note.project_id}`}>
                           <Card className="hover:shadow-md transition-shadow cursor-pointer">
                             <CardContent className="p-4">
                               <p className="text-sm text-gray-500 mb-2">{project?.name}</p>

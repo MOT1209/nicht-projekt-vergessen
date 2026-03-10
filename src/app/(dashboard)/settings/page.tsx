@@ -87,7 +87,7 @@ export default function SettingsPage() {
               </div>
               <Switch
                 checked={notifications.reminders}
-                onCheckedChange={(checked) => setNotifications({ ...notifications, reminders: checked })}
+                onChange={(e) => setNotifications({ ...notifications, reminders: e.target.checked })}
               />
             </div>
             <div className="flex items-center justify-between">
@@ -97,7 +97,7 @@ export default function SettingsPage() {
               </div>
               <Switch
                 checked={notifications.taskUpdates}
-                onCheckedChange={(checked) => setNotifications({ ...notifications, taskUpdates: checked })}
+                onChange={(e) => setNotifications({ ...notifications, taskUpdates: e.target.checked })}
               />
             </div>
             <div className="flex items-center justify-between">
@@ -107,7 +107,7 @@ export default function SettingsPage() {
               </div>
               <Switch
                 checked={notifications.weeklyReport}
-                onCheckedChange={(checked) => setNotifications({ ...notifications, weeklyReport: checked })}
+                onChange={(e) => setNotifications({ ...notifications, weeklyReport: e.target.checked })}
               />
             </div>
           </CardContent>
