@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useStore } from '@/lib/store';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,8 @@ import {
   Edit,
   ExternalLink,
   FolderKanban,
-  RefreshCw
+  RefreshCw,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -25,7 +26,7 @@ const COLORS = [
   '#3B82F6', '#EC4899', '#06B6D4', '#84CC16'
 ];
 
-export default function ProjectsPage() {
+function ProjectsContent() {
   const searchParams = useSearchParams();
   const showNewForm = searchParams.get('new') === 'true';
   
@@ -306,5 +307,17 @@ export default function ProjectsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ProjectsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
+      </div>
+    }>
+      <ProjectsContent />
+    </Suspense>
   );
 }
