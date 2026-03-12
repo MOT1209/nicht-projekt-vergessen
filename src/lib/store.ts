@@ -10,11 +10,11 @@ interface AppState {
   notes: Note[];
   activities: Activity[];
   files: File[];
-  
+
   // Auth State
   user: User | null;
   profile: Profile | null;
-  
+
   // UI State
   loading: boolean;
   error: string | null;
@@ -48,8 +48,8 @@ interface AppState {
   addActivity: (activity: Omit<Activity, 'id' | 'created_at'>) => Promise<void>;
 
   // File Actions
-  addFile: (file: Omit<File, 'id' | 'created_at'>) => Promise<void>;
-  deleteFile: (id: string) => Promise<void>;
+  uploadFile: (projectId: string, file: globalThis.File) => Promise<void>;
+  deleteFile: (id: string, filePath?: string) => Promise<void>;
 
   // Getters (Optional but kept for compatibility)
   getProjectTasks: (projectId: string) => Task[];
@@ -79,7 +79,7 @@ export const useStore = create<AppState>((set, get) => ({
     try {
       const { data: { session }, error } = await supabase.auth.getSession();
       if (error) throw error;
-      
+
       if (session?.user) {
         set({ user: session.user });
         // Fetch profile
@@ -109,7 +109,7 @@ export const useStore = create<AppState>((set, get) => ({
       // 1. Scan local folders
       const scanResponse = await fetch('/api/scan');
       const scanData = await scanResponse.json();
-      
+
       if (scanData.projects && scanData.projects.length > 0) {
         // 2. Sync with Supabase (Upsert based on name/path if possible, or just insert new ones)
         const currentUser = get().user;
@@ -233,11 +233,11 @@ export const useStore = create<AppState>((set, get) => ({
     if (task) {
       const { error } = await supabase.from('tasks').update(data).eq('id', id);
       if (error) throw error;
-      
+
       set((state) => ({
         tasks: state.tasks.map((t) => (t.id === id ? { ...t, ...data } : t)),
       }));
-      
+
       await get().addActivity({
         project_id: task.project_id,
         action: 'updated_task',
@@ -300,25 +300,59 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   // File Actions
-  addFile: async (file) => {
-    const { data, error } = await supabase
+  uploadFile: async (projectId, browserFile) => {
+    const user = get().user;
+    if (!user) throw new Error('Not authenticated');
+
+    const fileExt = browserFile.name.split('.').pop();
+    const filePath = `${user.id}/${projectId}/${Date.now()}_${browserFile.name}`;
+
+    // Upload to Supabase Storage
+    const { error: uploadError } = await supabase.storage
+      .from('project-files')
+      .upload(filePath, browserFile, { upsert: false });
+
+    if (uploadError) throw uploadError;
+
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from('project-files')
+      .getPublicUrl(filePath);
+
+    // Save metadata to DB
+    const fileRecord = {
+      project_id: projectId,
+      file_name: browserFile.name,
+      file_path: filePath,
+      file_type: browserFile.type || fileExt || 'unknown',
+      file_size: browserFile.size,
+      file_url: urlData.publicUrl,
+    };
+
+    const { data, error: dbError } = await supabase
       .from('files')
-      .insert([file])
+      .insert([fileRecord])
       .select()
       .single();
 
-    if (error) throw error;
+    if (dbError) throw dbError;
     set((state) => ({ files: [data as any, ...state.files] }));
+
     await get().addActivity({
-      project_id: file.project_id,
+      project_id: projectId,
       action: 'uploaded_file',
       entity_type: 'file',
       entity_id: data.id,
+      metadata: { file_name: browserFile.name },
     });
-    await get().updateProject(file.project_id, { last_activity: new Date().toISOString() });
+    await get().updateProject(projectId, { last_activity: new Date().toISOString() });
   },
 
-  deleteFile: async (id) => {
+  deleteFile: async (id, filePath) => {
+    // Delete from Storage if path provided
+    if (filePath) {
+      await supabase.storage.from('project-files').remove([filePath]);
+    }
     const { error } = await supabase.from('files').delete().eq('id', id);
     if (error) throw error;
     set((state) => ({ files: state.files.filter((f) => f.id !== id) }));

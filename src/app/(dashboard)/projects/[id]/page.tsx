@@ -1,7 +1,7 @@
 'use client';
 
-import { 
-  useState, 
+import {
+  useState,
   use,
   useEffect
 } from 'react';
@@ -12,11 +12,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { formatRelativeTime, formatDate, cn } from '@/lib/utils';
-import { 
-  ArrowLeft, 
-  Plus, 
-  CheckCircle2, 
-  Circle, 
+import {
+  ArrowLeft,
+  Plus,
+  CheckCircle2,
+  Circle,
   Clock,
   FileText,
   Paperclip,
@@ -30,7 +30,10 @@ import {
   X,
   Brain,
   Sparkles,
-  Loader2
+  Loader2,
+  Upload,
+  Download,
+  File as FileIcon
 } from 'lucide-react';
 import Link from 'next/link';
 import type { Task, TaskStatus, TaskPriority, Note } from '@/types';
@@ -41,19 +44,24 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const { id } = use(params);
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('tasks');
-  
-  const { 
-    projects, 
-    tasks, 
-    notes, 
-    files, 
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const {
+    projects,
+    tasks,
+    notes,
+    files,
     activities,
-    addTask, 
-    updateTask, 
+    addTask,
+    updateTask,
     deleteTask,
     addNote,
     updateNote,
     deleteNote,
+    uploadFile,
+    deleteFile,
     loadProjectData,
     loading: storeLoading
   } = useStore();
@@ -199,7 +207,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       {/* Project Info */}
       <div className="flex items-start justify-between mb-6">
         <div className="flex items-center gap-4">
-          <div 
+          <div
             className="w-12 h-12 rounded-xl"
             style={{ backgroundColor: project.color }}
           />
@@ -360,9 +368,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
                     <button
-                      onClick={() => updateTask(task.id, { 
-                        status: task.status === 'TODO' ? 'IN_PROGRESS' : 
-                               task.status === 'IN_PROGRESS' ? 'DONE' : 'TODO' 
+                      onClick={() => updateTask(task.id, {
+                        status: task.status === 'TODO' ? 'IN_PROGRESS' :
+                          task.status === 'IN_PROGRESS' ? 'DONE' : 'TODO'
                       })}
                       className="mt-0.5"
                     >
@@ -454,7 +462,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     </div>
                   ) : (
                     <div className="flex items-start justify-between">
-                      <div 
+                      <div
                         className="flex-1 whitespace-pre-wrap"
                         onClick={() => setEditingNote(note.id)}
                       >
@@ -485,14 +493,71 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
       {activeTab === 'files' && (
         <div className="space-y-4">
-          {/* Upload File */}
+          {/* Upload Zone */}
           <Card>
             <CardContent className="p-4">
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                <Paperclip className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-500">اسحب الملفات هنا أو انقر للرفع</p>
-                <p className="text-xs text-gray-400 mt-1">سيتم ربط هذه الميزة بـ Supabase Storage</p>
+              <div
+                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${isDragging
+                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                    : 'border-gray-300 hover:border-purple-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }`}
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={async (e) => {
+                  e.preventDefault();
+                  setIsDragging(false);
+                  const droppedFiles = Array.from(e.dataTransfer.files);
+                  for (const f of droppedFiles) {
+                    setUploadingFile(true);
+                    setUploadError(null);
+                    try {
+                      await uploadFile(id, f);
+                    } catch (err: any) {
+                      setUploadError(err.message || 'فشل رفع الملف');
+                    } finally {
+                      setUploadingFile(false);
+                    }
+                  }
+                }}
+                onClick={() => document.getElementById('file-input')?.click()}
+              >
+                <input
+                  id="file-input"
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={async (e) => {
+                    const selectedFiles = Array.from(e.target.files || []);
+                    for (const f of selectedFiles) {
+                      setUploadingFile(true);
+                      setUploadError(null);
+                      try {
+                        await uploadFile(id, f);
+                      } catch (err: any) {
+                        setUploadError(err.message || 'فشل رفع الملف');
+                      } finally {
+                        setUploadingFile(false);
+                      }
+                    }
+                    e.target.value = '';
+                  }}
+                />
+                {uploadingFile ? (
+                  <>
+                    <Loader2 className="h-8 w-8 text-purple-500 mx-auto mb-2 animate-spin" />
+                    <p className="text-purple-600 font-medium">جاري الرفع...</p>
+                  </>
+                ) : (
+                  <>
+                    <Upload className={`h-8 w-8 mx-auto mb-2 ${isDragging ? 'text-purple-500' : 'text-gray-400'}`} />
+                    <p className="text-gray-600 dark:text-gray-300 font-medium">اسحب الملفات هنا أو انقر للاختيار</p>
+                    <p className="text-xs text-gray-400 mt-1">جميع أنواع الملفات مدعومة</p>
+                  </>
+                )}
               </div>
+              {uploadError && (
+                <p className="text-red-500 text-sm mt-2 text-center">{uploadError}</p>
+              )}
             </CardContent>
           </Card>
 
@@ -502,22 +567,47 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               {projectFiles.map((file) => (
                 <Card key={file.id}>
                   <CardContent className="p-4 flex items-center gap-3">
-                    <FileText className="h-5 w-5 text-gray-400" />
-                    <div className="flex-1">
-                      <p className="font-medium">{file.file_name}</p>
+                    <div className="p-2 rounded-lg bg-purple-50 dark:bg-purple-900/30">
+                      <FileIcon className="h-5 w-5 text-purple-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{file.file_name}</p>
                       <p className="text-xs text-gray-400">
-                        {file.file_type} • {(file.file_size / 1024).toFixed(1)} KB
+                        {file.file_type} • {file.file_size < 1024 * 1024
+                          ? `${(file.file_size / 1024).toFixed(1)} KB`
+                          : `${(file.file_size / (1024 * 1024)).toFixed(1)} MB`
+                        }
                       </p>
                     </div>
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-gray-400 hidden sm:block">
                       {formatDate(file.created_at)}
                     </span>
+                    <div className="flex items-center gap-1">
+                      {file.file_url && (
+                        <a
+                          href={file.file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1 text-gray-400 hover:text-purple-500 transition-colors"
+                          title="تحميل"
+                        >
+                          <Download className="h-4 w-4" />
+                        </a>
+                      )}
+                      <button
+                        onClick={() => deleteFile(file.id, file.file_path)}
+                        className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                        title="حذف"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
           ) : (
-            <p className="text-center text-gray-500 py-8">لا توجد ملفات</p>
+            <p className="text-center text-gray-500 py-8">لا توجد ملفات مرفوعة بعد</p>
           )}
         </div>
       )}
