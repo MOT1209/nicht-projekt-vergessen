@@ -257,12 +257,12 @@ function ProjectsContent() {
               </div>
             </form>
             ) : (
-              <form onSubmit={handleImport} className="space-y-4">
+              <div className="space-y-4">
                 <div className="bg-violet-50 text-violet-800 text-sm p-4 rounded-lg flex items-start gap-3 mb-2 border border-violet-100">
                   <FolderDown className="w-5 h-5 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="font-semibold mb-1">استيراد مجلد من جهازك المكتبي</p>
-                    <p>قم بنسخ المسار الكامل للمجلد (مثل: <code className="bg-white px-1.5 py-0.5 rounded border border-violet-200">C:\Users\Name\Projects\my-app</code>) والصقه في الحقل أدناه.</p>
+                    <p>قم باختيار المجلد مباشرة من نافذة المتصفح لإنشاء مشروع جديد باسمه.</p>
                   </div>
                 </div>
                 
@@ -273,29 +273,44 @@ function ProjectsContent() {
                   </div>
                 )}
 
-                <div>
-                  <label className="block text-sm font-medium mb-1">مسار المجلد المطلق (Absolute Path)</label>
-                  <div className="flex gap-2">
-                    <Input
-                      dir="ltr"
-                      placeholder="C:\Users\..."
-                      value={importPath}
-                      onChange={(e) => setImportPath(e.target.value)}
-                      required
-                      className="font-mono text-sm"
-                    />
-                    <Button type="submit" disabled={importLoading || !importPath.trim()} className="min-w-[120px]">
-                      {importLoading ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : <FolderDown className="w-4 h-4 ml-2" />}
-                      استيراد الآن
-                    </Button>
-                  </div>
+                <div className="py-4 text-center">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    className="w-full h-24 border-dashed border-2 flex flex-col items-center justify-center hover:bg-violet-50 hover:border-violet-300 transition-colors"
+                    onClick={async () => {
+                      try {
+                        setImportError('');
+                        // @ts-ignore
+                        const dirHandle = await window.showDirectoryPicker();
+                        addProject({
+                          name: dirHandle.name,
+                          description: `مجلد محلي: ${dirHandle.name}`,
+                          status: 'ACTIVE',
+                          color: COLORS[Math.floor(Math.random() * COLORS.length)],
+                          github_url: '',
+                          website_url: ''
+                        });
+                        setShowForm(false);
+                      } catch (err: any) {
+                        if (err.name !== 'AbortError') {
+                          setImportError(err.message || 'حدث خطأ أثناء فحص المجلد. المتصفح قد لا يدعم هذه الميزة.');
+                        }
+                      }
+                    }}
+                  >
+                    <FolderDown className="w-8 h-8 text-violet-500 mb-2" />
+                    <span className="font-semibold text-gray-700">اضغط لاختيار المجلد من جهازك</span>
+                    <span className="text-xs text-gray-400 mt-1">سيتم قراءة اسم المجلد وإضافته كمشروع</span>
+                  </Button>
                 </div>
+                
                 <div className="flex pt-2">
                   <Button type="button" variant="ghost" onClick={() => setShowForm(false)}>
                     إلغاء
                   </Button>
                 </div>
-              </form>
+              </div>
             )}
           </CardContent>
         </Card>
