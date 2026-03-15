@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/layout/sidebar';
 import { supabase } from '@/lib/supabase';
 
+import { useStore } from '@/lib/store';
+
 export default function DashboardLayout({
   children,
 }: {
@@ -12,6 +14,7 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const checked = useRef(false);
+  const { checkSession, user } = useStore();
 
   useEffect(() => {
     if (checked.current) return;
@@ -20,9 +23,12 @@ export default function DashboardLayout({
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         router.push('/login');
+      } else {
+        // Populate the store with user and profile data
+        checkSession();
       }
     });
-  }, [router]);
+  }, [router, checkSession]);
 
   return (
     <div className="flex h-screen bg-gray-50">
