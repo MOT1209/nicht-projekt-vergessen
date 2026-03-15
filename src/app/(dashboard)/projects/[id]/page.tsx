@@ -35,6 +35,7 @@ import {
   Download,
   File as FileIcon
 } from 'lucide-react';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import Link from 'next/link';
 import type { Task, TaskStatus, TaskPriority, Note } from '@/types';
 
@@ -428,17 +429,18 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           {/* Add Note */}
           <Card>
             <CardContent className="p-4">
-              <div className="flex gap-2">
-                <Textarea
-                  placeholder="اكتب ملاحظة..."
-                  value={newNote}
-                  onChange={(e) => setNewNote(e.target.value)}
-                  className="min-h-[80px]"
+              <div className="space-y-4">
+                <RichTextEditor
+                  content={newNote}
+                  onChange={setNewNote}
+                  placeholder="اكتب ملاحظة جديدة هنا..."
                 />
-                <Button onClick={handleAddNote} className="self-end">
-                  <Plus className="h-4 w-4 ml-2" />
-                  إضافة
-                </Button>
+                <div className="flex justify-end">
+                  <Button onClick={handleAddNote}>
+                    <Plus className="h-4 w-4 ml-2" />
+                    إضافة الملاحظة
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -449,25 +451,25 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               <Card key={note.id}>
                 <CardContent className="p-4">
                   {editingNote === note.id ? (
-                    <div className="space-y-2">
-                      <Textarea
-                        defaultValue={note.content}
-                        onBlur={(e) => {
-                          updateNote(note.id, { content: e.target.value });
-                          setEditingNote(null);
-                        }}
-                        autoFocus
-                        className="min-h-[100px]"
+                    <div className="space-y-4">
+                      <RichTextEditor
+                        content={note.content}
+                        onChange={(content) => updateNote(note.id, { content })}
                       />
+                      <div className="flex justify-end">
+                        <Button size="sm" onClick={() => setEditingNote(null)}>
+                          <Save className="h-4 w-4 ml-2" />
+                          حفظ وإغلاق
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     <div className="flex items-start justify-between">
                       <div
-                        className="flex-1 whitespace-pre-wrap"
+                        className="flex-1 prose prose-sm max-w-none rtl text-right"
                         onClick={() => setEditingNote(note.id)}
-                      >
-                        {note.content}
-                      </div>
+                        dangerouslySetInnerHTML={{ __html: note.content }}
+                      />
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-gray-400">
                           {formatRelativeTime(note.created_at)}
