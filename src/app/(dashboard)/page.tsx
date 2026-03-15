@@ -11,9 +11,23 @@ import {
   AlertCircle,
   FolderKanban,
   ArrowRight,
-  RefreshCw
+  RefreshCw,
+  BarChart3,
+  PieChart as PieChartIcon
 } from 'lucide-react';
 import Link from 'next/link';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell
+} from 'recharts';
 
 export default function DashboardPage() {
   const { projects, tasks, fetchProjects } = useStore();
@@ -38,6 +52,25 @@ export default function DashboardPage() {
     const due = new Date(t.due_date);
     return due.toDateString() === today.toDateString();
   });
+
+  // Chart Data Preparation
+  const taskStatusData = [
+    { name: 'مكتملة', value: tasks.filter(t => t.status === 'DONE').length, color: '#10b981' }, // emerald-500
+    { name: 'قيد التنفيذ', value: tasks.filter(t => t.status === 'IN_PROGRESS').length, color: '#f59e0b' }, // amber-500
+    { name: 'قيد الانتظار', value: tasks.filter(t => t.status === 'TODO').length, color: '#6366f1' }, // indigo-500
+  ].filter(d => d.value > 0);
+
+  const projectProgressData = activeProjects.map(project => {
+    const projectTasks = tasks.filter(t => t.project_id === project.id);
+    const completed = projectTasks.filter(t => t.status === 'DONE').length;
+    const remaining = projectTasks.length - completed;
+    return {
+      name: project.name,
+      'مكتملة': completed,
+      'متبقية': remaining,
+      total: projectTasks.length
+    };
+  }).filter(d => d.total > 0).slice(0, 5); // Limit to top 5 for the chart
 
   return (
     <div className="p-8">
@@ -90,6 +123,90 @@ export default function DashboardPage() {
               <p className="text-2xl font-bold">{todayTasks.length}</p>
               <p className="text-sm text-gray-500">مهام اليوم</p>
             </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Interactive Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Project Progress Bar Chart */}
+        <Card className="flex flex-col">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-violet-500" />
+              تقدم المشاريع (أهم 5 مشاريع نشطة)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex-1 min-h-[300px]">
+            {projectProgressData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={projectProgressData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} />
+                  <RechartsTooltip 
+                    cursor={{ fill: '#F3F4F6' }}
+                    itemStyle={{ fontSize: '14px', fontFamily: 'inherit' }}
+                    labelStyle={{ fontSize: '14px', fontWeight: 'bold', color: '#111827', fontFamily: 'inherit' }}
+                    wrapperStyle={{ borderRadius: '8px', overflow: 'hidden', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  />
+                  <Bar dataKey="مكتملة" stackId="a" fill="#10b981" radius={[0, 0, 4, 4]} />
+                  <Bar dataKey="متبقية" stackId="a" fill="#e5e7eb" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-gray-500">لا توجد مهام موزعة على المشاريع.</div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Task Status Pie Chart */}
+        <Card className="flex flex-col">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <PieChartIcon className="h-5 w-5 text-blue-500" />
+              توزيع حالة المهام (الإجمالي)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex-1 min-h-[300px]">
+            {taskStatusData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={taskStatusData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={70}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {taskStatusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip 
+                    itemStyle={{ fontSize: '14px', fontFamily: 'inherit', color: '#111827' }}
+                    wrapperStyle={{ borderRadius: '8px', overflow: 'hidden', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-gray-500">لا توجد مهام مسجلة.</div>
+            )}
+            
+            {/* Custom Legend for Pie Chart */}
+            {taskStatusData.length > 0 && (
+              <div className="flex justify-center gap-6 mt-4 pb-2">
+                {taskStatusData.map((entry, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
+                    <span className="text-sm text-gray-600 font-medium">{entry.name}</span>
+                    <span className="text-sm text-gray-400">({entry.value})</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
