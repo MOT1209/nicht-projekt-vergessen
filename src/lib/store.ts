@@ -114,14 +114,24 @@ export const useStore = create<AppState>((set, get) => ({
         // 2. Sync with Supabase (Upsert based on name/path if possible, or just insert new ones)
         const currentUser = get().user;
         for (const p of scanData.projects) {
-          await supabase.from('projects').upsert({
-            name: p.name,
-            description: p.description,
-            status: p.status,
-            color: p.color,
-            last_activity: p.last_activity,
-            user_id: currentUser?.id,
-          }, { onConflict: 'name' });
+          // Check if project already exists by name for this user to avoid duplicates
+          const { data: existing } = await supabase
+            .from('projects')
+            .select('id')
+            .eq('name', p.name)
+            .eq('user_id', currentUser?.id)
+            .maybeSingle();
+
+          if (!existing) {
+            await supabase.from('projects').insert({
+              name: p.name,
+              description: p.description,
+              status: p.status,
+              color: p.color,
+              last_activity: p.last_activity,
+              user_id: currentUser?.id,
+            });
+          }
         }
       }
 

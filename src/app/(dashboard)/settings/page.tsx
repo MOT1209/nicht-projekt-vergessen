@@ -9,23 +9,40 @@ import {
   Bell, 
   Shield, 
   Palette,
-  Database,
   LogOut,
-  Save
+  Save,
+  Mail,
+  CheckCircle2
 } from 'lucide-react';
 import { useState } from 'react';
+import { useStore } from '@/lib/store';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export default function SettingsPage() {
+  const { user, profile, signOut } = useStore();
+  const router = useRouter();
+  const [saved, setSaved] = useState(false);
+
   const [notifications, setNotifications] = useState({
     reminders: true,
     taskUpdates: true,
     weeklyReport: false,
   });
 
-  const [profile, setProfile] = useState({
-    name: 'المستخدم',
-    email: 'user@example.com',
-  });
+  const displayName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'المستخدم';
+  const displayEmail = user?.email || profile?.email || 'غير متاح';
+  const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url || null;
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/login');
+  };
+
+  const handleSave = () => {
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+  };
 
   return (
     <div className="p-8 max-w-3xl">
@@ -43,30 +60,53 @@ export default function SettingsPage() {
               <User className="h-5 w-5" />
               الملف الشخصي
             </CardTitle>
-            <CardDescription>معلومات حسابك</CardDescription>
+            <CardDescription>معلومات حسابك الحالي</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Avatar */}
+            <div className="flex items-center gap-4">
+              <div className="relative w-16 h-16 rounded-full overflow-hidden bg-purple-100 flex items-center justify-center text-purple-600 font-bold text-xl border-2 border-purple-200">
+                {avatarUrl ? (
+                  <Image
+                    src={avatarUrl}
+                    alt={displayName}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  displayName.charAt(0).toUpperCase()
+                )}
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">{displayName}</p>
+                <p className="text-sm text-gray-500 flex items-center gap-1">
+                  <Mail className="h-3 w-3" />
+                  {displayEmail}
+                </p>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">الاسم</label>
                 <Input
-                  value={profile.name}
-                  onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                  defaultValue={displayName}
+                  readOnly
+                  className="bg-gray-50"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">البريد الإلكتروني</label>
                 <Input
                   type="email"
-                  value={profile.email}
-                  onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                  defaultValue={displayEmail}
+                  readOnly
+                  className="bg-gray-50"
                 />
               </div>
             </div>
-            <Button>
-              <Save className="h-4 w-4 ml-2" />
-              حفظ التغييرات
-            </Button>
+            <p className="text-xs text-gray-400">يتم إدارة بياناتك عبر حساب جوجل</p>
           </CardContent>
         </Card>
 
@@ -110,6 +150,19 @@ export default function SettingsPage() {
                 onChange={(e) => setNotifications({ ...notifications, weeklyReport: e.target.checked })}
               />
             </div>
+            <Button onClick={handleSave} className="mt-2">
+              {saved ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4 ml-2 text-green-400" />
+                  تم الحفظ!
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 ml-2" />
+                  حفظ التفضيلات
+                </>
+              )}
+            </Button>
           </CardContent>
         </Card>
 
@@ -136,28 +189,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Database */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Database className="h-5 w-5" />
-              قاعدة البيانات
-            </CardTitle>
-            <CardDescription>إدارة الاتصال بقاعدة البيانات</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-              <p className="text-amber-800 font-medium">قيد الإعداد</p>
-              <p className="text-sm text-amber-700 mt-1">
-                قم بإعداد Supabase لتخزين بياناتك بشكل دائم
-              </p>
-              <Button variant="outline" className="mt-3">
-                إعداد Supabase
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Danger Zone */}
         <Card className="border-red-200">
           <CardHeader>
@@ -172,7 +203,7 @@ export default function SettingsPage() {
                 <p className="font-medium">تسجيل الخروج</p>
                 <p className="text-sm text-gray-500">تسجيل الخروج من حسابك</p>
               </div>
-              <Button variant="danger">
+              <Button variant="danger" onClick={handleSignOut}>
                 <LogOut className="h-4 w-4 ml-2" />
                 تسجيل الخروج
               </Button>
