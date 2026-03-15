@@ -19,6 +19,7 @@ export interface Project {
   website_url?: string;
   status: ProjectStatus;
   color: string;
+  local_path?: string;
   last_activity: string;
   created_at: string;
 }

@@ -16,12 +16,16 @@ import {
   ExternalLink,
   FolderKanban,
   RefreshCw,
-  Loader2,
+  loader2,
   FolderDown,
-  AlertCircle
+  AlertCircle,
+  Folder,
+  ChevronRight,
+  ChevronLeft,
+  Home
 } from 'lucide-react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 const COLORS = [
   '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', 
@@ -30,6 +34,7 @@ const COLORS = [
 
 function ProjectsContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const showNewForm = searchParams.get('new') === 'true';
   
   const { projects, tasks, addProject, deleteProject, fetchProjects } = useStore();
@@ -50,6 +55,9 @@ function ProjectsContent() {
   const [importError, setImportError] = useState('');
   const [importLoading, setImportLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [browserPath, setBrowserPath] = useState('');
+  const [browserData, setBrowserData] = useState<{currentPath: string, parentPath: string, folders: any[]}>({currentPath: '', parentPath: '', folders: []});
+  
   const [newProject, setNewProject] = useState({
     name: '',
     description: '',
@@ -57,17 +65,43 @@ function ProjectsContent() {
     website_url: '',
     status: 'ACTIVE' as const,
     color: COLORS[0],
+    local_path: '',
   });
+
+  const browseFolders = async (path?: string) => {
+    setImportLoading(true);
+    try {
+      const res = await fetch('/api/files/browse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPath: path }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setBrowserData(data);
+      setBrowserPath(data.currentPath);
+    } catch (err: any) {
+      setImportError(err.message);
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showForm && formMode === 'import' && !browserPath) {
+      browseFolders();
+    }
+  }, [showForm, formMode]);
 
   const filteredProjects = projects.filter(p => 
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     p.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newProject.name.trim()) {
-      addProject(newProject);
+      const id = await addProject(newProject);
       setNewProject({
         name: '',
         description: '',
@@ -75,8 +109,31 @@ function ProjectsContent() {
         website_url: '',
         status: 'ACTIVE',
         color: COLORS[0],
+        local_path: '',
       });
       setShowForm(false);
+      router.push(`/projects/${id}`);
+    }
+  };
+
+  const handleImportSelect = async (folder: {name: string, path: string}) => {
+    setImportLoading(true);
+    try {
+      const id = await addProject({
+        name: folder.name,
+        description: `مشروع محلي مستورد من: ${folder.path}`,
+        status: 'ACTIVE',
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        github_url: '',
+        website_url: '',
+        local_path: folder.path
+      });
+      setShowForm(false);
+      router.push(`/projects/${id}`);
+    } catch (err: any) {
+      setImportError(err.message);
+    } finally {
+      setImportLoading(false);
     }
   };
 
@@ -258,54 +315,71 @@ function ProjectsContent() {
             </form>
             ) : (
               <div className="space-y-4">
-                <div className="bg-violet-50 text-violet-800 text-sm p-4 rounded-lg flex items-start gap-3 mb-2 border border-violet-100">
+                <div className="bg-violet-50 text-violet-800 text-sm p-4 rounded-lg flex items-start gap-3 mb-4 border border-violet-100">
                   <FolderDown className="w-5 h-5 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-semibold mb-1">استيراد مجلد من جهازك المكتبي</p>
-                    <p>قم باختيار المجلد مباشرة من نافذة المتصفح لإنشاء مشروع جديد باسمه.</p>
+                    <p className="font-semibold mb-1">استعراض ملفات النظام</p>
+                    <p>المسار الحالي: <code className="bg-white px-1 py-0.5 rounded border border-violet-200 text-xs">{browserPath}</code></p>
                   </div>
                 </div>
-                
+
                 {importError && (
-                  <div className="bg-red-50 text-red-700 text-sm p-3 rounded-lg flex items-center gap-2 border border-red-100">
+                  <div className="bg-red-50 text-red-700 text-sm p-3 rounded-lg flex items-center gap-2 border border-red-100 mb-4">
                     <AlertCircle className="w-4 h-4" />
                     {importError}
                   </div>
                 )}
 
-                <div className="py-4 text-center">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    className="w-full h-24 border-dashed border-2 flex flex-col items-center justify-center hover:bg-violet-50 hover:border-violet-300 transition-colors"
-                    onClick={async () => {
-                      try {
-                        setImportError('');
-                        // @ts-ignore
-                        const dirHandle = await window.showDirectoryPicker();
-                        addProject({
-                          name: dirHandle.name,
-                          description: `مجلد محلي: ${dirHandle.name}`,
-                          status: 'ACTIVE',
-                          color: COLORS[Math.floor(Math.random() * COLORS.length)],
-                          github_url: '',
-                          website_url: ''
-                        });
-                        setShowForm(false);
-                      } catch (err: any) {
-                        if (err.name !== 'AbortError') {
-                          setImportError(err.message || 'حدث خطأ أثناء فحص المجلد. المتصفح قد لا يدعم هذه الميزة.');
-                        }
-                      }
-                    }}
-                  >
-                    <FolderDown className="w-8 h-8 text-violet-500 mb-2" />
-                    <span className="font-semibold text-gray-700">اضغط لاختيار المجلد من جهازك</span>
-                    <span className="text-xs text-gray-400 mt-1">سيتم قراءة اسم المجلد وإضافته كمشروع</span>
-                  </Button>
+                <div className="border rounded-lg overflow-hidden bg-white max-h-[400px] flex flex-col">
+                  <div className="flex items-center gap-2 p-2 border-b bg-gray-50">
+                    <Button variant="ghost" size="sm" onClick={() => browseFolders()} title="الرئيسية">
+                      <Home className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => browseFolders(browserData.parentPath)} title="للأعلى">
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
+                    <div className="flex-1 text-xs truncate text-gray-400 dir-ltr text-left px-2">
+                      {browserPath}
+                    </div>
+                  </div>
+                  
+                  <div className="overflow-y-auto flex-1 p-1">
+                    {importLoading ? (
+                      <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                        <Loader2 className="w-8 h-8 animate-spin mb-2" />
+                        <span className="text-sm">جاري التحميل...</span>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-0.5">
+                        {browserData.folders.map((folder) => (
+                          <div 
+                            key={folder.path}
+                            className="flex items-center justify-between p-2 hover:bg-violet-50 rounded group transition-colors cursor-pointer"
+                            onClick={() => browseFolders(folder.path)}
+                          >
+                            <div className="flex items-center gap-3">
+                              <Folder className="w-4 h-4 text-violet-400" />
+                              <span className="text-sm font-medium text-gray-700">{folder.name}</span>
+                            </div>
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="opacity-0 group-hover:opacity-100 h-7 text-xs bg-violet-600 text-white hover:bg-violet-700 hover:text-white"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleImportSelect(folder);
+                              }}
+                            >
+                              اختيار هذا المجلد
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                
-                <div className="flex pt-2">
+
+                <div className="flex pt-4 border-t border-gray-100">
                   <Button type="button" variant="ghost" onClick={() => setShowForm(false)}>
                     إلغاء
                   </Button>

@@ -106,36 +106,7 @@ export const useStore = create<AppState>((set, get) => ({
   fetchProjects: async () => {
     set({ loading: true, error: null });
     try {
-      // 1. Scan local folders
-      const scanResponse = await fetch('/api/scan');
-      const scanData = await scanResponse.json();
-
-      if (scanData.projects && scanData.projects.length > 0) {
-        // 2. Sync with Supabase (Upsert based on name/path if possible, or just insert new ones)
-        const currentUser = get().user;
-        for (const p of scanData.projects) {
-          // Check if project already exists by name for this user to avoid duplicates
-          const { data: existing } = await supabase
-            .from('projects')
-            .select('id')
-            .eq('name', p.name)
-            .eq('user_id', currentUser?.id)
-            .maybeSingle();
-
-          if (!existing) {
-            await supabase.from('projects').insert({
-              name: p.name,
-              description: p.description,
-              status: p.status,
-              color: p.color,
-              last_activity: p.last_activity,
-              user_id: currentUser?.id,
-            });
-          }
-        }
-      }
-
-      // 3. Fetch all from Supabase
+      // Fetch all from Supabase
       const { data, error } = await supabase
         .from('projects')
         .select('*')
@@ -144,7 +115,7 @@ export const useStore = create<AppState>((set, get) => ({
       if (error) throw error;
       set({ projects: data as any[] });
     } catch (error: any) {
-      console.error('Failed to fetch projects:', JSON.stringify(error, null, 2), error.message || error);
+      console.error('Failed to fetch projects:', error.message || error);
       set({ error: error.message || 'حدث خطأ غير متوقع' });
     } finally {
       set({ loading: false });
@@ -190,6 +161,7 @@ export const useStore = create<AppState>((set, get) => ({
 
     if (error) throw error;
     set((state) => ({ projects: [data as any, ...state.projects] }));
+    return data.id; // Return ID for navigation
   },
 
   updateProject: async (id, data) => {

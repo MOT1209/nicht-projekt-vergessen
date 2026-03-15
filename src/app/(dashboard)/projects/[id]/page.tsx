@@ -39,7 +39,7 @@ import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import Link from 'next/link';
 import type { Task, TaskStatus, TaskPriority, Note } from '@/types';
 
-type TabType = 'tasks' | 'notes' | 'files' | 'activity';
+type TabType = 'tasks' | 'notes' | 'files' | 'local' | 'activity';
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -85,6 +85,52 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [localBrowserData, setLocalBrowserData] = useState<{currentPath: string, parentPath: string, folders: any[], files: any[]}>({currentPath: '', parentPath: '', folders: [], files: []});
+  const [localLoading, setLocalLoading] = useState(false);
+  const [selectedLocalFile, setSelectedLocalFile] = useState<{name: string, content: string, path: string} | null>(null);
+
+  const browseLocal = async (path?: string) => {
+    if (!project.local_path && !path) return;
+    setLocalLoading(true);
+    try {
+      const res = await fetch('/api/files/browse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPath: path || project.local_path }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setLocalBrowserData(data);
+    } catch (err) {
+      console.error('Local browse error:', err);
+    } finally {
+      setLocalLoading(false);
+    }
+  };
+
+  const readLocalFile = async (filePath: string) => {
+    setLocalLoading(true);
+    try {
+      const res = await fetch('/api/files/read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filePath }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setSelectedLocalFile(data);
+    } catch (err) {
+      console.error('File read error:', err);
+    } finally {
+      setLocalLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'local') {
+      browseLocal();
+    }
+  }, [activeTab]);
 
   const handleGetAiSummary = async () => {
     setAiLoading(true);
@@ -189,7 +235,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const tabs = [
     { id: 'tasks', label: 'المهام', icon: CheckCircle2, count: projectTasks.length },
     { id: 'notes', label: 'الملاحظات', icon: FileText, count: projectNotes.length },
-    { id: 'files', label: 'الملفات', icon: Paperclip, count: projectFiles.length },
+    { id: 'files', label: 'المرفقات', icon: Paperclip, count: projectFiles.length },
+    { id: 'local', label: 'ملفات الجهاز', icon: GitBranch, count: project.local_path ? '✓' : 0 },
     { id: 'activity', label: 'النشاط', icon: Activity, count: projectActivities.length },
   ] as const;
 
@@ -610,6 +657,117 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             </div>
           ) : (
             <p className="text-center text-gray-500 py-8">لا توجد ملفات مرفوعة بعد</p>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'local' && (
+        <div className="space-y-4">
+          {!project.local_path ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <GitBranch className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <h3 className="font-semibold text-lg mb-2">هذا المشروع غير مرتبط بمجلد محلي</h3>
+                <p className="text-gray-500 mb-4">اربط المشروع بمجلد على جهازك لتمكين استعراض الأكواد والتحليل العميق.</p>
+                <Link href="/projects">
+                  <Button variant="outline">استيراد مشروع محلي</Button>
+                </Link>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* File Browser */}
+              <Card className="md:col-span-1 h-[600px] flex flex-col">
+                <CardHeader className="py-4 border-b">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-bold flex items-center gap-2">
+                       <FolderIcon className="w-4 h-4 text-violet-500" />
+                       مستعرض الملفات
+                    </CardTitle>
+                    {localLoading && <Loader2 className="w-4 h-4 animate-spin text-violet-600" />}
+                  </div>
+                </CardHeader>
+                <div className="flex items-center gap-1 p-2 bg-gray-50 border-b">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 w-7 p-0" 
+                    onClick={() => browseLocal(project.local_path)}
+                  >
+                    <Home className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 w-7 p-0" 
+                    onClick={() => browseLocal(localBrowserData.parentPath)}
+                    disabled={localBrowserData.currentPath === project.local_path}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <div className="text-[10px] text-gray-400 truncate dir-ltr text-left flex-1 px-1">
+                    ...{localBrowserData.currentPath?.split(/[\\/]/).slice(-2).join('/')}
+                  </div>
+                </div>
+                <div className="flex-1 overflow-y-auto p-1 bg-white">
+                  <div className="space-y-0.5">
+                    {localBrowserData.folders.map(folder => (
+                      <button
+                        key={folder.path}
+                        onClick={() => browseLocal(folder.path)}
+                        className="w-full flex items-center gap-2 p-1.5 text-xs hover:bg-violet-50 rounded text-right group"
+                      >
+                        <FolderIcon className="w-4 h-4 text-violet-400" />
+                        <span className="truncate flex-1">{folder.name}</span>
+                        <ChevronRight className="w-3 h-3 text-gray-300 group-hover:text-violet-400" />
+                      </button>
+                    ))}
+                    {localBrowserData.files.map(file => (
+                      <button
+                        key={file.path}
+                        onClick={() => readLocalFile(file.path)}
+                        className={cn(
+                          "w-full flex items-center gap-2 p-1.5 text-xs hover:bg-violet-50 rounded text-right",
+                          selectedLocalFile?.path === file.path && "bg-violet-100 text-violet-700"
+                        )}
+                      >
+                        <FileIcon className="w-4 h-4 text-gray-400" />
+                        <span className="truncate flex-1">{file.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </Card>
+
+              {/* File Viewer */}
+              <Card className="md:col-span-2 h-[600px] flex flex-col overflow-hidden">
+                {selectedLocalFile ? (
+                  <>
+                    <CardHeader className="py-3 border-b flex flex-row items-center justify-between bg-white sticky top-0 z-10">
+                      <div>
+                        <CardTitle className="text-sm font-bold">{selectedLocalFile.name}</CardTitle>
+                        <p className="text-[10px] text-gray-400 dir-ltr text-left">{selectedLocalFile.path}</p>
+                      </div>
+                      <Link href={`/chat?query=${encodeURIComponent(`اشرح لي محتوى هذا الملف: ${selectedLocalFile.name}\n\n${selectedLocalFile.content.substring(0, 500)}`)}`}>
+                        <Button size="sm" className="h-8 gap-1.5 bg-violet-600 hover:bg-violet-700">
+                          <Brain className="w-3 h-3" />
+                          تحليل بواسطة AI
+                        </Button>
+                      </Link>
+                    </CardHeader>
+                    <div className="flex-1 overflow-auto bg-gray-50 p-4 font-mono text-xs dir-ltr text-left">
+                      <pre className="whitespace-pre-wrap">{selectedLocalFile.content}</pre>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center text-gray-400 p-8 text-center">
+                    <FileText className="h-12 w-12 mb-4 opacity-20" />
+                    <h4 className="font-medium text-gray-600 mb-1">لم يتم اختيار أي ملف</h4>
+                    <p className="max-w-xs">اختر ملفاً من القائمة الجانبية لقراءة محتواه وتحليله بواسطة الذكاء الاصطناعي.</p>
+                  </div>
+                )}
+              </Card>
+            </div>
           )}
         </div>
       )}

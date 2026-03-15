@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Brain, Send, User, Loader2, Sparkles } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { cn } from '@/lib/utils';
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 
 type Message = {
   id: string;
@@ -16,7 +18,21 @@ type Message = {
 };
 
 export default function ChatPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="w-8 h-8 animate-spin text-violet-600" />
+      </div>
+    }>
+      <ChatContent />
+    </Suspense>
+  );
+}
+
+function ChatContent() {
   const { projects, tasks, notes, profile, user } = useStore();
+  const searchParams = useSearchParams();
+  const initialQuery = searchParams.get('query');
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -36,13 +52,28 @@ export default function ChatPage() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSend = async () => {
-    if (!input.trim()) return;
+  useEffect(() => {
+    if (initialQuery && messages.length === 1) {
+      // Trigger send for initial query
+      handleInitialQuery(initialQuery);
+    }
+  }, [initialQuery]);
+
+  const handleInitialQuery = async (query: string) => {
+    setInput(query);
+    setTimeout(() => {
+      handleSend(query);
+    }, 100);
+  };
+
+  const handleSend = async (overrideInput?: string) => {
+    const messageText = overrideInput || input;
+    if (!messageText.trim()) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: input.trim(),
+      content: messageText.trim(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
