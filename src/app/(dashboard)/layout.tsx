@@ -31,9 +31,9 @@ export default function DashboardLayout({
   }, [router, checkSession]);
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-background text-foreground">
       <Sidebar />
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto border-r border-border dark:border-gray-800">
         {children}
       </main>
     </div>

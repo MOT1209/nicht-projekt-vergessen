@@ -12,9 +12,12 @@ import {
   Plus,
   LogOut,
   User,
-  MessageSquare
+  MessageSquare,
+  Moon,
+  Sun
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ThemeToggle } from '../theme-toggle';
 
 const navItems = [
   { href: '/', label: 'لوحة التحكم', icon: LayoutDashboard },
@@ -41,10 +44,11 @@ export function Sidebar() {
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-blue-500">
           <Brain className="h-6 w-6" />
         </div>
-        <div>
+        <div className="flex-1">
           <h1 className="font-bold text-lg">Memory AI</h1>
           <p className="text-xs text-gray-400">مساعدك الذكي</p>
         </div>
+        <ThemeToggle />
       </div>
 
       {/* New Project Button */}
