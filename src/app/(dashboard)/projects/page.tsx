@@ -16,7 +16,9 @@ import {
   ExternalLink,
   FolderKanban,
   RefreshCw,
-  Loader2
+  Loader2,
+  FolderDown,
+  AlertCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -43,6 +45,10 @@ function ProjectsContent() {
     setLoading(false);
   };
   const [showForm, setShowForm] = useState(showNewForm);
+  const [formMode, setFormMode] = useState<'manual' | 'import'>('manual');
+  const [importPath, setImportPath] = useState('');
+  const [importError, setImportError] = useState('');
+  const [importLoading, setImportLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [newProject, setNewProject] = useState({
     name: '',
@@ -71,6 +77,38 @@ function ProjectsContent() {
         color: COLORS[0],
       });
       setShowForm(false);
+    }
+  };
+
+  const handleImport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setImportError('');
+    if (!importPath.trim()) return;
+
+    setImportLoading(true);
+    try {
+      const res = await fetch('/api/import-local', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ folderPath: importPath.trim() }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'فشل الاستيراد');
+
+      addProject({
+        ...data.project,
+        github_url: '',
+        website_url: '',
+      });
+      setImportPath('');
+      setShowForm(false);
+    } catch (err: any) {
+      setImportError(err.message);
+    } finally {
+      setImportLoading(false);
     }
   };
 
@@ -125,9 +163,26 @@ function ProjectsContent() {
 
       {/* New Project Form */}
       {showForm && (
-        <Card className="mb-6 border-violet-200">
+        <Card className="mb-6 border-violet-200 shadow-sm">
           <CardContent className="p-6">
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="flex gap-4 mb-6 border-b border-gray-100 pb-4">
+              <button 
+                onClick={() => setFormMode('manual')}
+                className={cn("text-sm font-medium pb-4 -mb-[17px] border-b-2 transition-colors", formMode === 'manual' ? 'border-violet-600 text-violet-700' : 'border-transparent text-gray-500 hover:text-gray-700')}
+              >
+                إنشاء يدوي
+              </button>
+              <button 
+                onClick={() => setFormMode('import')}
+                className={cn("text-sm font-medium pb-4 -mb-[17px] border-b-2 transition-colors flex items-center gap-1.5", formMode === 'import' ? 'border-violet-600 text-violet-700' : 'border-transparent text-gray-500 hover:text-gray-700')}
+              >
+                <FolderDown className="w-4 h-4" />
+                استيراد من الجهاز
+              </button>
+            </div>
+
+            {formMode === 'manual' ? (
+              <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">اسم المشروع</label>
@@ -194,13 +249,54 @@ function ProjectsContent() {
                   ))}
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 pt-2">
                 <Button type="submit">إنشاء المشروع</Button>
                 <Button type="button" variant="ghost" onClick={() => setShowForm(false)}>
                   إلغاء
                 </Button>
               </div>
             </form>
+            ) : (
+              <form onSubmit={handleImport} className="space-y-4">
+                <div className="bg-violet-50 text-violet-800 text-sm p-4 rounded-lg flex items-start gap-3 mb-2 border border-violet-100">
+                  <FolderDown className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold mb-1">استيراد مجلد من جهازك المكتبي</p>
+                    <p>قم بنسخ المسار الكامل للمجلد (مثل: <code className="bg-white px-1.5 py-0.5 rounded border border-violet-200">C:\Users\Name\Projects\my-app</code>) والصقه في الحقل أدناه.</p>
+                  </div>
+                </div>
+                
+                {importError && (
+                  <div className="bg-red-50 text-red-700 text-sm p-3 rounded-lg flex items-center gap-2 border border-red-100">
+                    <AlertCircle className="w-4 h-4" />
+                    {importError}
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">مسار المجلد المطلق (Absolute Path)</label>
+                  <div className="flex gap-2">
+                    <Input
+                      dir="ltr"
+                      placeholder="C:\Users\..."
+                      value={importPath}
+                      onChange={(e) => setImportPath(e.target.value)}
+                      required
+                      className="font-mono text-sm"
+                    />
+                    <Button type="submit" disabled={importLoading || !importPath.trim()} className="min-w-[120px]">
+                      {importLoading ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : <FolderDown className="w-4 h-4 ml-2" />}
+                      استيراد الآن
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex pt-2">
+                  <Button type="button" variant="ghost" onClick={() => setShowForm(false)}>
+                    إلغاء
+                  </Button>
+                </div>
+              </form>
+            )}
           </CardContent>
         </Card>
       )}
