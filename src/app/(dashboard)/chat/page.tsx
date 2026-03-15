@@ -219,7 +219,7 @@ function ChatContent() {
                 disabled={isLoading}
               />
               <Button
-                onClick={handleSend}
+                onClick={() => handleSend()}
                 disabled={isLoading || !input.trim()}
                 className="absolute left-1.5 h-10 w-10 p-0 rounded-lg bg-violet-600 hover:bg-violet-700 text-white shadow-sm transition-all disabled:opacity-50 disabled:bg-gray-400"
               >

@@ -22,7 +22,11 @@ import { format, isAfter, subDays, startOfDay } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
 export default function SearchPage() {
-  const { projects, tasks, notes } = useStore();
+  const store = useStore();
+  const projects = store.projects || [];
+  const tasks = store.tasks || [];
+  const notes = store.notes || [];
+  
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | 'projects' | 'tasks' | 'notes'>('all');
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
@@ -65,8 +69,10 @@ export default function SearchPage() {
   const totalResults = filteredResults.projects.length + filteredResults.tasks.length + filteredResults.notes.length;
 
   const Highlight = ({ text, query }: { text: string; query: string }) => {
-    if (!query) return <>{text}</>;
-    const parts = text.split(new RegExp(`(${query})`, 'gi'));
+    if (!query || !text) return <>{text}</>;
+    // Escape regex special characters
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const parts = text.split(new RegExp(`(${escapedQuery})`, 'gi'));
     return (
       <>
         {parts.map((part, i) => 
