@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
+import { useRouter } from 'next/navigation';
 import { useStore } from '@/lib/store';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,7 +17,7 @@ import {
   ExternalLink,
   FolderKanban,
   RefreshCw,
-  loader2,
+  Loader2,
   FolderDown,
   AlertCircle,
   Folder,
@@ -402,7 +403,7 @@ function ProjectsContent() {
             return (
               <div 
                 key={project.id} 
-                onClick={() => window.location.href = `/projects/${project.id}`}
+                onClick={() => router.push(`/projects/${project.id}`)}
                 className="h-full"
               >
                 <Card className="h-full hover:shadow-md transition-shadow cursor-pointer group">

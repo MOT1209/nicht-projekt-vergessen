@@ -125,24 +125,29 @@ export const useStore = create<AppState>((set, get) => ({
   loadProjectData: async (projectId: string) => {
     set({ loading: true, error: null });
     try {
-      const [tasksRes, notesRes, activitiesRes, filesRes] = await Promise.all([
+      const [projectRes, tasksRes, notesRes, activitiesRes, filesRes] = await Promise.all([
+        supabase.from('projects').select('*').eq('id', projectId).single(),
         supabase.from('tasks').select('*').eq('project_id', projectId).order('created_at', { ascending: false }),
         supabase.from('notes').select('*').eq('project_id', projectId).order('created_at', { ascending: false }),
         supabase.from('activities').select('*').eq('project_id', projectId).order('created_at', { ascending: false }),
         supabase.from('files').select('*').eq('project_id', projectId).order('created_at', { ascending: false }),
       ]);
 
+      if (projectRes.error) throw projectRes.error;
       if (tasksRes.error) throw tasksRes.error;
       if (notesRes.error) throw notesRes.error;
       if (activitiesRes.error) throw activitiesRes.error;
       if (filesRes.error) throw filesRes.error;
 
-      set({
+      set((state) => ({
+        projects: state.projects.find(p => p.id === projectId) 
+          ? state.projects.map(p => p.id === projectId ? projectRes.data as Project : p)
+          : [projectRes.data as Project, ...state.projects],
         tasks: tasksRes.data as any[],
         notes: notesRes.data as any[],
         activities: activitiesRes.data as any[],
         files: filesRes.data as any[],
-      });
+      }));
     } catch (error: any) {
       set({ error: error.message });
     } finally {

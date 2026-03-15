@@ -33,6 +33,10 @@ import {
   Loader2,
   Upload,
   Download,
+  Folder as FolderIcon,
+  ChevronRight,
+  ChevronLeft,
+  Home,
   File as FileIcon
 } from 'lucide-react';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
@@ -90,6 +94,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const [selectedLocalFile, setSelectedLocalFile] = useState<{name: string, content: string, path: string} | null>(null);
 
   const browseLocal = async (path?: string) => {
+    if (!project) return;
     if (!project.local_path && !path) return;
     setLocalLoading(true);
     try {
@@ -154,6 +159,15 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       setAiLoading(false);
     }
   };
+
+  if (storeLoading && !project) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px]">
+        <Loader2 className="h-10 w-10 text-violet-600 animate-spin mb-4" />
+        <p className="text-gray-500">جاري تحميل بيانات المشروع...</p>
+      </div>
+    );
+  }
 
   if (!project) {
     return (
