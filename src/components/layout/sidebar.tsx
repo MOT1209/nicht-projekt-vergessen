@@ -11,13 +11,15 @@ import {
   Brain,
   Plus,
   LogOut,
-  User
+  User,
+  MessageSquare
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/', label: 'لوحة التحكم', icon: LayoutDashboard },
   { href: '/projects', label: 'المشاريع', icon: FolderKanban },
+  { href: '/chat', label: 'المساعد الذكي', icon: MessageSquare },
   { href: '/search', label: 'البحث', icon: Search },
   { href: '/settings', label: 'الإعدادات', icon: Settings },
 ];
