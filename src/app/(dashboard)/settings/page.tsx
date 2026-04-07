@@ -14,7 +14,7 @@ import {
   Mail,
   CheckCircle2
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -30,6 +30,17 @@ export default function SettingsPage() {
     weeklyReport: false,
   });
 
+  useEffect(() => {
+    const saved = localStorage.getItem('notification-preferences');
+    if (saved) {
+      try {
+        setNotifications(JSON.parse(saved));
+      } catch (e) {
+        // ignore parse errors
+      }
+    }
+  }, []);
+
   const displayName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'المستخدم';
   const displayEmail = user?.email || profile?.email || 'غير متاح';
   const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url || null;
@@ -40,6 +51,7 @@ export default function SettingsPage() {
   };
 
   const handleSave = () => {
+    localStorage.setItem('notification-preferences', JSON.stringify(notifications));
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };

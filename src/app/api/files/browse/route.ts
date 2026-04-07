@@ -7,6 +7,18 @@ export async function POST(request: Request) {
   try {
     const { currentPath } = await request.json();
     
+    // Path sanitization - prevent directory traversal attacks
+    if (currentPath && currentPath.includes('..')) {
+      return NextResponse.json({ error: 'مسار غير صالح' }, { status: 400 });
+    }
+
+    // Block system directories
+    const SYSTEM_DIRS = ['Windows', 'System32', 'SysWOW64', 'Program Files', 'Program Files (x86)', 'bootmgr', 'pagefile.sys', 'hiberfil.sys'];
+    const pathParts = currentPath ? currentPath.split(/[\\/]/) : [];
+    if (pathParts.some(part => SYSTEM_DIRS.includes(part))) {
+      return NextResponse.json({ error: 'مسار غير صالح' }, { status: 400 });
+    }
+    
     // Default to Home directory or Projects folder
     let targetPath = currentPath || os.homedir();
 

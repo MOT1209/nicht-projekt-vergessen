@@ -67,7 +67,8 @@ CREATE TABLE projects (
   status project_status DEFAULT 'ACTIVE',
   color TEXT DEFAULT '#8B5CF6',
   last_activity TIMESTAMPTZ DEFAULT NOW(),
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  local_path TEXT
 );
 
 -- Create Tasks Table
@@ -98,6 +99,7 @@ CREATE TABLE files (
   file_path TEXT NOT NULL,
   file_type TEXT NOT NULL,
   file_size BIGINT NOT NULL,
+  file_url TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

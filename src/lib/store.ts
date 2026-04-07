@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Project, Task, Note, Activity, File, Profile } from '@/types';
+import { Project, Task, Note, Activity, ProjectFile, Profile } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 
@@ -9,7 +9,7 @@ interface AppState {
   tasks: Task[];
   notes: Note[];
   activities: Activity[];
-  files: File[];
+  files: ProjectFile[];
 
   // Auth State
   user: User | null;
@@ -29,7 +29,7 @@ interface AppState {
   // Project Actions
   fetchProjects: () => Promise<void>;
   loadProjectData: (projectId: string) => Promise<void>;
-  addProject: (project: Omit<Project, 'id' | 'created_at' | 'last_activity'>) => Promise<void>;
+  addProject: (project: Omit<Project, 'id' | 'created_at' | 'last_activity'>) => Promise<string>;
   updateProject: (id: string, data: Partial<Project>) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
   setCurrentProject: (id: string | null) => void;
@@ -54,7 +54,7 @@ interface AppState {
   // Getters (Optional but kept for compatibility)
   getProjectTasks: (projectId: string) => Task[];
   getProjectNotes: (projectId: string) => Note[];
-  getProjectFiles: (projectId: string) => File[];
+  getProjectFiles: (projectId: string) => ProjectFile[];
   getProjectActivities: (projectId: string) => Activity[];
   getTodayTasks: () => Task[];
   getActiveProjects: () => Project[];

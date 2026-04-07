@@ -42,7 +42,7 @@ export interface Note {
   created_at: string;
 }
 
-export interface File {
+export interface ProjectFile {
   id: string;
   project_id: string;
   file_name: string;

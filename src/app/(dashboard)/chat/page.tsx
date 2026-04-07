@@ -5,7 +5,7 @@ import { useStore } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Brain, Send, User, Loader2, Sparkles } from 'lucide-react';
+import { Brain, Send, User, Loader2, Sparkles, Activity, CheckCircle2, FolderKanban } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { cn } from '@/lib/utils';
 import { useSearchParams } from 'next/navigation';
@@ -54,16 +54,12 @@ function ChatContent() {
 
   useEffect(() => {
     if (initialQuery && messages.length === 1) {
-      // Trigger send for initial query
       handleInitialQuery(initialQuery);
     }
-  }, [initialQuery]);
+  }, [initialQuery, handleInitialQuery]);
 
   const handleInitialQuery = async (query: string) => {
-    setInput(query);
-    setTimeout(() => {
-      handleSend(query);
-    }, 100);
+    handleSend(query);
   };
 
   const handleSend = async (overrideInput?: string) => {
@@ -137,7 +133,7 @@ function ChatContent() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">المساعد الذكي (AI)</h1>
-            <p className="text-gray-500 mt-1">تحدثت معي لتحليل مشاريعك، البحث عن مهام، أو تذكر تفاصيل معينة.</p>
+            <p className="text-gray-500 mt-1">تحدث معي لتحليل مشاريعك، البحث عن مهام، أو توليد برومبتات احترافية.</p>
           </div>
         </div>
       </div>
@@ -209,12 +205,54 @@ function ChatContent() {
 
           {/* Input Area */}
           <div className="p-4 border-t bg-gray-50/50">
+            {/* Quick Actions */}
+            {messages.length <= 1 && (
+              <div className="flex flex-wrap items-center justify-center gap-2 mb-6 max-w-2xl mx-auto px-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full bg-white border-violet-200 text-violet-700 hover:bg-violet-50 hover:border-violet-300 gap-1.5"
+                  onClick={() => handleInitialQuery("ولد لي برومبت احترافي للبدء في ميزة جديدة في مشروعي الحالي")}
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  ميزة جديدة
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full bg-white border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300 gap-1.5"
+                  onClick={() => handleInitialQuery("ساعدني في صياغة برومبت لإصلاح علة برمجة (Bug) معقدة في مشروعي")}
+                >
+                  <Activity className="h-3.5 w-3.5" />
+                  إصلاح خطأ
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full bg-white border-green-200 text-green-700 hover:bg-green-50 hover:border-green-300 gap-1.5"
+                  onClick={() => handleInitialQuery("اكتب لي خطة عمل (Roadmap) عملية لإنهاء مشروعي الحالي")}
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  خطة عمل
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full bg-white border-amber-200 text-amber-700 hover:bg-amber-50 hover:border-amber-300 gap-1.5"
+                  onClick={() => handleInitialQuery("قم بتحليل الكود المصدري في المجلد المحلي واقترح تحسينات")}
+                >
+                  <FolderKanban className="h-3.5 w-3.5" />
+                  تحليل الكود
+                </Button>
+              </div>
+            )}
+
             <div className="flex items-center gap-2 max-w-4xl mx-auto relative">
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="اسألني أي شيء عن مشاريعك..."
+                placeholder="اسألني أي شيء أو اطلب توليد برومبت..."
                 className="flex-1 py-6 pr-4 pl-12 rounded-xl border-gray-300 focus-visible:ring-violet-500 text-base shadow-sm"
                 disabled={isLoading}
               />
@@ -228,7 +266,7 @@ function ChatContent() {
             </div>
             <p className="text-center text-xs text-gray-400 mt-3 flex items-center justify-center gap-1">
               <Sparkles className="h-3 w-3" />
-              توضيح: قد يرتكب الذكاء الاصطناعي الأخطاء. تأكد من مراجعة المعلومات المهمة.
+              تلميح: يمكنني الآن تحويل مشروعك إلى "برومبتات" احترافية جاهزة للاستخدام.
             </p>
           </div>
         </Card>

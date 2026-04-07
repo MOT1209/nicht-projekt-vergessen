@@ -21,6 +21,8 @@ import Link from 'next/link';
 import { format, isAfter, subDays, startOfDay } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
+const stripHtml = (html: string): string => html.replace(/<[^>]*>/g, '');
+
 export default function SearchPage() {
   const store = useStore();
   const projects = store.projects || [];
@@ -59,8 +61,8 @@ export default function SearchPage() {
             matchesDate(t.created_at)
           ) : [],
       notes: (typeFilter === 'all' || typeFilter === 'notes')
-        ? notes.filter(n => 
-            n.content.toLowerCase().includes(q) &&
+        ? notes.filter(n =>
+            stripHtml(n.content).toLowerCase().includes(q) &&
             matchesDate(n.created_at)
           ) : [],
     };

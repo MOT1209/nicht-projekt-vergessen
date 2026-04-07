@@ -17,6 +17,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,11 +36,15 @@ export default function RegisterPage() {
       });
 
       if (error) throw error;
-      
-      // Usually users need to verify email, but assuming auto-login for testing...
-      await checkSession();
-      router.push('/');
-      router.refresh();
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData?.session) {
+        await checkSession();
+        router.push('/');
+        router.refresh();
+      } else {
+        setSuccessMessage('تم إنشاء الحساب بنجاح! يرجى التحقق من بريدك الإلكتروني لتفعيل الحساب.');
+      }
     } catch (err: any) {
       setError(err.message || 'حدث خطأ أثناء التسجيل');
     } finally {
@@ -53,7 +58,7 @@ export default function RegisterPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: `${window.location.origin}/auth/callback?next=/`,
         },
       });
       if (error) throw error;
@@ -72,6 +77,11 @@ export default function RegisterPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleRegister} className="space-y-4">
+            {successMessage && (
+              <div className="p-3 text-sm text-green-600 bg-green-50 rounded-lg">
+                {successMessage}
+              </div>
+            )}
             {error && (
               <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg">
                 {error}

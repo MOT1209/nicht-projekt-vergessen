@@ -24,18 +24,8 @@ export function ThemeProvider({
   ...props
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(defaultTheme);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem(storageKey) as Theme;
-    if (savedTheme) {
-      setTheme(savedTheme);
-    }
-    setMounted(true);
-  }, [storageKey]);
-
-  useEffect(() => {
-    if (!mounted) return;
     const root = window.document.documentElement;
     root.classList.remove('light', 'dark');
 
@@ -47,7 +37,7 @@ export function ThemeProvider({
     } else {
       root.classList.add(theme);
     }
-  }, [theme, mounted]);
+  }, [theme]);
 
   const value = {
     theme,
@@ -59,9 +49,7 @@ export function ThemeProvider({
 
   return (
     <ThemeProviderContext.Provider {...props} value={value}>
-      <div style={{ visibility: mounted ? 'visible' : 'hidden' }}>
-        {children}
-      </div>
+      {children}
     </ThemeProviderContext.Provider>
   );
 }

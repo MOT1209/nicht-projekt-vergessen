@@ -334,29 +334,38 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               <div className="p-1.5 bg-violet-100 rounded-lg">
                 <Brain className="h-5 w-5 text-violet-600" />
               </div>
-              <h3 className="font-semibold text-violet-900">ملخص الذكاء الاصطناعي</h3>
+              <h3 className="font-semibold text-violet-900">ملخص وتحليل الذكاء الاصطناعي</h3>
             </div>
-            <button
-              onClick={handleGetAiSummary}
-              disabled={aiLoading}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-60 transition-colors"
-            >
-              {aiLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="h-4 w-4" />
-              )}
-              {aiLoading ? 'جاري التحليل...' : 'أين توقفت؟'}
-            </button>
+            <div className="flex gap-2">
+              <Link href={`/chat?query=${encodeURIComponent(`ولد لي برومبت احترافي للبدء في ميزة جديدة بناءً على سياق مشروعي ${project.name}`)}`}>
+                <Button variant="outline" size="sm" className="h-8 gap-1.5 border-blue-200 text-blue-700 hover:bg-blue-50">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  توليد برومبت
+                </Button>
+              </Link>
+              <Button
+                onClick={handleGetAiSummary}
+                disabled={aiLoading}
+                size="sm"
+                className="h-8 gap-1.5 bg-violet-600 hover:bg-violet-700 text-white"
+              >
+                {aiLoading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Activity className="h-3.5 w-3.5" />
+                )}
+                {aiLoading ? 'جاري التحليل...' : 'أين توقفت؟'}
+              </Button>
+            </div>
           </div>
           {aiSummary ? (
-            <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-line bg-white/60 rounded-lg p-3 border border-violet-100">
+            <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-line bg-white/80 rounded-xl p-4 border border-violet-100 shadow-sm">
               {aiSummary}
             </div>
           ) : (
-            <p className="text-sm text-violet-600/70 italic">
-              اضغط على "أين توقفت؟" ليقوم الذكاء الاصطناعي بتحليل مشروعك وتذكيرك بما تبقى.
-            </p>
+            <div className="text-sm text-violet-600/70 italic bg-violet-50/50 rounded-lg p-3 border border-dashed border-violet-200">
+              اضغط على "أين توقفت؟" ليقوم الذكاء الاصطناعي بتحليل عميق لمشروعك وتقديم نصائح تقنية احترافية.
+            </div>
           )}
         </CardContent>
       </Card>

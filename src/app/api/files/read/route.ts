@@ -13,6 +13,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'File path is required' }, { status: 400 });
     }
 
+    // Path sanitization - prevent directory traversal attacks
+    if (filePath.includes('..')) {
+      return NextResponse.json({ error: 'Invalid file path' }, { status: 400 });
+    }
+
+    // Block system directories
+    const SYSTEM_DIRS = ['Windows', 'System32', 'SysWOW64', 'Program Files', 'Program Files (x86)', 'bootmgr', 'pagefile.sys', 'hiberfil.sys'];
+    const pathParts = filePath.split(/[\\/]/);
+    if (pathParts.some(part => SYSTEM_DIRS.includes(part))) {
+      return NextResponse.json({ error: 'Invalid file path' }, { status: 400 });
+    }
+
     if (!fs.existsSync(filePath)) {
       return NextResponse.json({ error: 'File not found' }, { status: 404 });
     }
