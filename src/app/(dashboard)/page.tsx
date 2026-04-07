@@ -38,6 +38,9 @@ import Link from 'next/link';
 import { socialAccounts, platformConfig } from '@/lib/mock-social-data';
 import { SocialStatCard } from '@/components/social/SocialStatCard';
 import { AddAccountButton } from '@/components/social/AddAccountButton';
+import { ContentScheduler } from '@/components/dashboard/ContentScheduler';
+import { TaskManager } from '@/components/dashboard/TaskManager';
+import { FileExplorer } from '@/components/dashboard/FileExplorer';
 
 /* ─────────────────────────────── Types ─────────────────────────────── */
 
@@ -122,9 +125,9 @@ const PLATFORMS = [
 ];
 
 const INIT_MESSAGES: ChatMessage[] = [
-  { id: '1', role: 'assistant', content: 'مرحباً! أنا مساعدك الذكي المتكامل. كيف يمكنني مساعدتك اليوم؟ 🚀', timestamp: '10:30' },
+  { id: '1', role: 'assistant', content: 'مرحباً! أنا "الناتسيون" 🤖 مساعدك الذكي المتكامل. كيف يمكنني إلهامك اليوم؟ 🚀', timestamp: '10:30' },
   { id: '2', role: 'user', content: 'ما هو أداء المحتوى هذا الأسبوع؟', timestamp: '10:32' },
-  { id: '3', role: 'assistant', content: 'بناءً على تحليلي، حقق المحتوى هذا الأسبوع 2.3M مشاهدة — بزيادة 18% مقارنة بالأسبوع الماضي. 📈 أنصح بنشر محتوى في الفترة من 6–9 مساءً للحصول على أعلى تفاعل.', timestamp: '10:33' },
+  { id: '3', role: 'assistant', content: 'في القمة كالعادة! حقق المحتوى هذا الأسبوع 2.3M مشاهدة بزيادة 18%. أنصحك بصنع سيناريو جديد لاستغلال التريند الحالي.', timestamp: '10:33' },
 ];
 
 /* ─────────────────────────────── Component ─────────────────────────────── */
@@ -305,6 +308,11 @@ export default function DashboardPage() {
         <ActivityHeatmap />
       </div>
 
+      {/* ─── Content & Auto-Post Logic ─── */}
+      <div className="w-full">
+        <ContentScheduler />
+      </div>
+
       {/* ─── Main Content: Platforms + Tasks + Chat ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
@@ -363,90 +371,10 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* Tasks Panel */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="glass-card border border-violet-500/20 p-6 space-y-4"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-bold text-white flex items-center gap-2">
-                <Zap className="h-5 w-5 text-violet-400" />
-                المهام النشطة
-              </h3>
-              <p className="text-xs text-gray-500 mt-0.5">{incompleteTasks.length} مهمة متبقية</p>
-            </div>
-            <Link href="/tasks" className="text-xs text-violet-400 hover:text-violet-300 flex items-center gap-1 transition-colors">
-              عرض الكل <ChevronRight className="h-3 w-3" />
-            </Link>
-          </div>
-
-          <div className="space-y-2">
-            {incompleteTasks.length > 0 ? incompleteTasks.map((task, i) => (
-              <motion.div
-                key={task.id}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.08 * i + 0.4 }}
-                className="flex items-center gap-3 p-3 rounded-xl bg-gray-800/30 border border-transparent hover:border-violet-500/20 hover:bg-gray-800/50 transition-all group"
-              >
-                <div className={cn(
-                  'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0',
-                  task.status === 'DONE' ? 'border-emerald-500 bg-emerald-500' :
-                  task.status === 'IN_PROGRESS' ? 'border-amber-500' : 'border-gray-600'
-                )}>
-                  {task.status === 'DONE' && <CheckCircle2 className="w-3 h-3 text-white" />}
-                </div>
-                <p className={cn(
-                  'flex-1 text-sm truncate',
-                  task.status === 'DONE' ? 'line-through text-gray-600' : 'text-gray-300'
-                )}>
-                  {task.title}
-                </p>
-                <span className={cn(
-                  'text-[10px] px-1.5 py-0.5 rounded-md font-bold shrink-0',
-                  task.priority === 'HIGH' ? 'bg-rose-500/20 text-rose-400' :
-                  task.priority === 'MEDIUM' ? 'bg-amber-500/20 text-amber-400' :
-                  'bg-gray-700 text-gray-500'
-                )}>
-                  {task.priority === 'HIGH' ? 'عالية' : task.priority === 'MEDIUM' ? 'متوسطة' : 'منخفضة'}
-                </span>
-              </motion.div>
-            )) : (
-              <div className="text-center py-10 text-gray-600">
-                <CheckCircle2 className="w-10 h-10 mx-auto mb-2 text-emerald-500/40" />
-                <p className="text-sm font-medium text-emerald-500/60">جميع المهام مكتملة! 🎉</p>
-              </div>
-            )}
-          </div>
-
-          {/* Recent Activity Feed */}
-          <div className="pt-4 border-t border-white/5">
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-              <Activity className="h-3 w-3" />
-              النشاط الأخير
-            </p>
-            <div className="space-y-2">
-              {RECENT_ACTIVITY.slice(0, 2).map((item, i) => (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.6 + i * 0.1 }}
-                  className="flex items-start gap-2.5"
-                >
-                  <span className="text-sm mt-0.5">{item.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-gray-300 truncate">{item.title}</p>
-                    <p className="text-[10px] text-gray-600">{item.time}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </motion.div>
+        {/* File Explorer */}
+        <div className="flex flex-col h-[480px]">
+          <FileExplorer />
+        </div>
 
         {/* AI Chat */}
         <motion.div
@@ -459,7 +387,7 @@ export default function DashboardPage() {
             <div>
               <h3 className="font-bold text-white flex items-center gap-2">
                 <Brain className="h-5 w-5 text-cyan-400" />
-                المساعد الذكي
+                الناتسيون
               </h3>
               <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -521,6 +449,19 @@ export default function DashboardPage() {
             <div ref={chatEndRef} />
           </div>
 
+          {/* Quick Prompts */}
+          <div className="flex flex-wrap gap-2 mb-3 shrink-0">
+            {['سيناريو فيديو', 'أفكار محتوى', 'برومبت صور'].map(prompt => (
+              <button 
+                key={prompt}
+                onClick={() => setChatInput(prompt)}
+                className="px-2.5 py-1 text-[10px] sm:text-xs font-semibold rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500/20 transition-colors"
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
+
           {/* Input */}
           <div className="flex gap-2 shrink-0">
             <input
@@ -528,7 +469,7 @@ export default function DashboardPage() {
               value={chatInput}
               onChange={e => setChatInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSend()}
-              placeholder="اسأل الذكاء الاصطناعي..."
+              placeholder="تحدث مع الناتسيون..."
               className="flex-1 bg-gray-800/50 border border-gray-700/40 hover:border-blue-500/30 focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600 outline-none transition-all"
             />
             <motion.button
@@ -544,111 +485,10 @@ export default function DashboardPage() {
         </motion.div>
       </div>
 
-      {/* ─── Projects Quick View ─── */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.5 }}
-        className="glass-card border border-blue-500/15 p-6"
-      >
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <h3 className="font-bold text-white text-lg flex items-center gap-2">
-              <FolderKanban className="h-5 w-5 text-blue-400" />
-              المشاريع الحالية
-            </h3>
-            <p className="text-xs text-gray-500 mt-0.5">إدارة ومتابعة جميع المشاريع النشطة</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={handleRefresh}
-              disabled={loading}
-              className="p-2 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 transition-colors"
-            >
-              <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
-            </motion.button>
-            <Link href="/projects" className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors font-medium">
-              عرض الكل <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {projects.slice(0, 4).map((project: any, i: number) => {
-            const statusColors: Record<string, string> = {
-              active: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
-              completed: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
-              pending: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
-            };
-            const progress = Math.floor(Math.random() * 60 + 30);
-            return (
-              <motion.div
-                key={project.id}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.06 * i + 0.6 }}
-                whileHover={{ y: -4, scale: 1.01 }}
-                className="group p-4 rounded-xl bg-gray-800/30 border border-transparent hover:border-blue-500/25 hover:bg-gray-800/50 transition-all duration-200 cursor-pointer"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/10 border border-blue-500/20">
-                    <FolderKanban className="h-5 w-5 text-blue-400" />
-                  </div>
-                  <span className={cn(
-                    'text-[10px] px-2 py-0.5 rounded-full border font-semibold',
-                    statusColors[project.status?.toLowerCase() || 'active']
-                  )}>
-                    {project.status === 'completed' ? 'مكتمل' : project.status === 'pending' ? 'انتظار' : 'نشط'}
-                  </span>
-                </div>
-
-                <h4 className="font-semibold text-white text-sm mb-1 truncate">{project.name}</h4>
-                <p className="text-[10px] text-gray-500 mb-3 flex items-center gap-1">
-                  <Clock className="h-2.5 w-2.5" />
-                  {project.last_activity
-                    ? new Date(project.last_activity).toLocaleDateString('ar-EG')
-                    : 'غير محدد'}
-                </p>
-
-                <div>
-                  <div className="flex justify-between text-[10px] text-gray-500 mb-1">
-                    <span>التقدم</span>
-                    <span className="text-blue-400 font-semibold">{progress}%</span>
-                  </div>
-                  <div className="h-1.5 rounded-full bg-gray-700/60 overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${progress}%` }}
-                      transition={{ duration: 1, delay: 0.08 * i + 0.8 }}
-                      className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400"
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-3 pt-3 border-t border-white/5 flex items-center gap-1.5">
-                  {[FileText, Image, Video].map((Icon, j) => (
-                    <div key={j} className="h-5 w-5 rounded bg-gray-700/50 flex items-center justify-center">
-                      <Icon className="h-2.5 w-2.5 text-gray-500" />
-                    </div>
-                  ))}
-                  <span className="text-[10px] text-gray-600 mr-1">3 ملفات</span>
-                </div>
-              </motion.div>
-            );
-          })}
-
-          {projects.length === 0 && (
-            <div className="col-span-4 text-center py-12 text-gray-600">
-              <FolderKanban className="w-12 h-12 mx-auto mb-3 opacity-30" />
-              <p className="text-sm">لا توجد مشاريع بعد</p>
-              <Link href="/projects?new=true" className="text-xs text-blue-400 mt-1 inline-flex items-center gap-1 hover:text-blue-300">
-                <span>إنشاء مشروعك الأول</span> <ArrowRight className="h-3 w-3" />
-              </Link>
-            </div>
-          )}
-        </div>
-      </motion.div>
+      {/* ─── Bottom Task Manager area ─── */}
+      <div className="w-full">
+        <TaskManager />
+      </div>
 
     </div>
   );
