@@ -29,8 +29,15 @@ import {
   FileText,
   Video,
   Image,
+  Music,
+  Youtube,
+  Instagram,
+  Ghost,
 } from 'lucide-react';
 import Link from 'next/link';
+import { socialAccounts, platformConfig } from '@/lib/mock-social-data';
+import { SocialStatCard } from '@/components/social/SocialStatCard';
+import { AddAccountButton } from '@/components/social/AddAccountButton';
 
 /* ─────────────────────────────── Types ─────────────────────────────── */
 
@@ -232,6 +239,65 @@ export default function DashboardPage() {
           </div>
         ))}
       </div>
+
+      {/* ─── حساباتي والمواقع ─── */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.15 }}
+        className="space-y-6"
+      >
+        {/* Section Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30">
+              <Globe className="h-5 w-5 text-cyan-400" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-white">حساباتي والمواقع</h2>
+              <p className="text-xs text-gray-500">إدارة ومتابعة جميع حساباتك الاجتماعية</p>
+            </div>
+          </div>
+          <AddAccountButton />
+        </div>
+
+        {/* Platform Quick Icons */}
+        <div className="flex items-center gap-3">
+          {[
+            { name: 'TikTok', icon: Music, color: 'from-pink-500/20 to-rose-500/20', border: 'border-pink-500/30', text: 'text-pink-400' },
+            { name: 'YouTube', icon: Youtube, color: 'from-red-500/20 to-orange-500/20', border: 'border-red-500/30', text: 'text-red-400' },
+            { name: 'Instagram', icon: Instagram, color: 'from-purple-500/20 to-violet-500/20', border: 'border-purple-500/30', text: 'text-purple-400' },
+            { name: 'Snapchat', icon: Ghost, color: 'from-yellow-500/20 to-amber-500/20', border: 'border-yellow-500/30', text: 'text-yellow-400' },
+          ].map((platform) => (
+            <motion.div
+              key={platform.name}
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r border cursor-pointer transition-all',
+                platform.color, platform.border
+              )}
+            >
+              <platform.icon className={cn('h-4 w-4', platform.text)} />
+              <span className="text-sm font-semibold text-white">{platform.name}</span>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Social Stat Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {socialAccounts.map((account, i) => (
+            <motion.div
+              key={account.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 * i + 0.2 }}
+            >
+              <SocialStatCard account={account} />
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
 
       {/* ─── Charts Row ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
