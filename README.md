@@ -1,36 +1,28 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AlKing Dashboard - مشروع إدارة المحتوى الذكي
 
-## Getting Started
+مشروع Alking Dashboard هو "رادار مركزي" لصناعة المحتوى، يهدف إلى نقل التحكم من التشتت بين التطبيقات إلى منصة واحدة ذكية.
 
-First, run the development server:
+## الميزات الجديدة المضافة
+
+1. **رادار الترندات (Trend Radar)** - اكتشاف الترندات قبل صعودها
+2. **محطة الصوت (Voice Station)** - تحويل النص لصوت احترافي
+3. **المقص الذكي (Auto-Clipper)** - اكتشاف المقاطع الفيروسية من الفيديو الطويل
+4. **بوت التفاعل (Engagement Bot)** - ردود ذكية على التعليقات
+5. **مركز التحكم (Live Center)** - مراقبة المشاهدات المباشرة على الخريطة
+6. **الشخصية الرقمية (AI Persona)** - إنشاء avatar يتكلم بصوتك
+7. **رادار المنافسين (Competitors)** - تحليل قنوات المنافسين
+8. **المترجم العالمي (Global Dubber)** - دبلجة الفيديو للغات متعددة
+9. **استوديو الصور (Thumbnail Studio)** - توليد صور مصغرة جذابة
+10. **لوحة الأرباح (Revenue Dashboard)** - متابعة الدخل من المنصات
+
+## النشر
+
+المشروع منشور على: https://helpful-begonia-b042ae.netlify.app/
+
+## التطوير المحلي
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+افتح http://localhost:3000 لمشاهدة المشروع.
