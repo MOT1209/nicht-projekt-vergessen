@@ -14,8 +14,8 @@ export async function POST(request: Request) {
 
     // Block system directories
     const SYSTEM_DIRS = ['Windows', 'System32', 'SysWOW64', 'Program Files', 'Program Files (x86)', 'bootmgr', 'pagefile.sys', 'hiberfil.sys'];
-    const pathParts = currentPath ? currentPath.split(/[\\/]/) : [];
-    if (pathParts.some(part => SYSTEM_DIRS.includes(part))) {
+    const pathParts: string[] = currentPath ? currentPath.split(/[\\/]/) : [];
+    if (pathParts.some((part: string) => SYSTEM_DIRS.includes(part))) {
       return NextResponse.json({ error: 'مسار غير صالح' }, { status: 400 });
     }
     
