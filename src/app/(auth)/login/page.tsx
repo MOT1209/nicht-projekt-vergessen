@@ -22,18 +22,42 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
+    console.log('Starting login process...');
+    
+    if (!email || !password) {
+      setError('يرجى إدخال البريد الإلكتروني وكلمة المرور');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
+      console.log('Attempting login...');
+      
+      const result = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
-      
-      await checkSession();
-      router.push('/');
-      router.refresh();
+      console.log('Login result:', result);
+
+      if (result.error) {
+        console.error('Login failed:', result.error);
+        setError(result.error.message);
+        setLoading(false);
+        return;
+      }
+
+      if (result.data?.session) {
+        console.log('Login successful, session:', result.data.session);
+        await checkSession();
+        router.push('/');
+        router.refresh();
+      } else {
+        setError('لم يتم العثور على جلسة');
+      }
     } catch (err: any) {
+      console.error('Catch error:', err);
       setError(err.message || 'حدث خطأ أثناء تسجيل الدخول');
     } finally {
       setLoading(false);
