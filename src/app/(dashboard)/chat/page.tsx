@@ -52,15 +52,15 @@ function ChatContent() {
     scrollToBottom();
   }, [messages]);
 
+  const handleInitialQuery = async (query: string) => {
+    handleSend(query);
+  };
+
   useEffect(() => {
     if (initialQuery && messages.length === 1) {
       handleInitialQuery(initialQuery);
     }
   }, [initialQuery, handleInitialQuery]);
-
-  const handleInitialQuery = async (query: string) => {
-    handleSend(query);
-  };
 
   const handleSend = async (overrideInput?: string) => {
     const messageText = overrideInput || input;
