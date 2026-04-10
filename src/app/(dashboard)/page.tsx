@@ -1,495 +1,292 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useStore } from '@/lib/store';
-import { StatsCard } from '@/components/dashboard/StatsCard';
-import { WeeklyActivityChart, ActivityHeatmap } from '@/components/dashboard/ChartPlaceholder';
-import { cn } from '@/lib/utils';
-import {
-  Users,
-  Eye,
-  Heart,
-  FolderKanban,
-  TrendingUp,
+import { 
+  ShieldCheck, 
+  FileCode, 
+  Zap, 
+  Search, 
+  Bug,
   Activity,
-  Zap,
-  Send,
-  RefreshCw,
-  ArrowRight,
-  CheckCircle2,
-  Brain,
-  Star,
-  Globe,
-  Database,
+  Cpu,
   Sparkles,
-  Clock,
-  Bell,
-  ChevronRight,
+  Upload,
+  Terminal,
+  Play,
+  Scissors,
+  Image as ImageIcon,
+  Type,
   FileText,
-  Video,
-  Image,
-  Music,
-  Youtube,
-  Instagram,
-  Ghost,
+  Hash,
+  Mic2,
+  Settings,
+  ChevronDown,
+  Clock,
+  MoreVertical,
+  Plus
 } from 'lucide-react';
-import Link from 'next/link';
-import { socialAccounts, platformConfig } from '@/lib/mock-social-data';
-import { SocialStatCard } from '@/components/social/SocialStatCard';
-import { AddAccountButton } from '@/components/social/AddAccountButton';
-import { ContentScheduler } from '@/components/dashboard/ContentScheduler';
-import { TaskManager } from '@/components/dashboard/TaskManager';
-import { FileExplorer } from '@/components/dashboard/FileExplorer';
+import { cn } from '@/lib/utils';
 
 /* ─────────────────────────────── Types ─────────────────────────────── */
 
-interface ChatMessage {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: string;
-}
+type DashboardTab = 'code' | 'content';
 
-/* ─────────────────────────────── Stats Data ─────────────────────────────── */
+/* ─────────────────────────────── Mock Data ─────────────────────────────── */
 
-const STATS = [
-  {
-    title: 'إجمالي المشتركين',
-    value: '2.57M',
-    subtitle: 'عبر جميع المنصات',
-    icon: Users,
-    trend: { value: 12.4, direction: 'up' as const },
-    accentColor: 'blue' as const,
-    delay: 0,
-  },
-  {
-    title: 'إجمالي المشاهدات',
-    value: '48.3M',
-    subtitle: 'آخر 30 يوم',
-    icon: Eye,
-    trend: { value: 8.1, direction: 'up' as const },
-    accentColor: 'cyan' as const,
-    delay: 0.08,
-  },
-  {
-    title: 'معدل التفاعل',
-    value: '84%',
-    subtitle: 'متوسط عبر المنصات',
-    icon: Heart,
-    trend: { value: 5.2, direction: 'up' as const },
-    accentColor: 'violet' as const,
-    delay: 0.16,
-  },
-  {
-    title: 'المشاريع النشطة',
-    value: '12',
-    subtitle: '4 مشاريع جديدة هذا الشهر',
-    icon: FolderKanban,
-    trend: { value: 33, direction: 'up' as const },
-    accentColor: 'emerald' as const,
-    delay: 0.24,
-  },
-  {
-    title: 'المحتوى المنشور',
-    value: '847',
-    subtitle: 'قطعة محتوى',
-    icon: Globe,
-    trend: { value: 2.8, direction: 'down' as const },
-    accentColor: 'amber' as const,
-    delay: 0.32,
-  },
-  {
-    title: 'قوة الذكاء',
-    value: '99.8%',
-    subtitle: 'دقة التحليل والتوقع',
-    icon: Brain,
-    trend: { value: 0.6, direction: 'up' as const },
-    accentColor: 'rose' as const,
-    delay: 0.4,
-  },
+const codeHealthMetrics = [
+  { label: 'Security Vulnerability (XSS)', status: 'critical', color: 'bg-rose-500/20 text-rose-400 border-rose-500/30' },
+  { label: 'Performance Optimizations (2 found)', status: 'warning', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
+  { label: 'Logical Corrections (Done)', status: 'success', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
 ];
 
-const RECENT_ACTIVITY = [
-  { id: '1', icon: '🚀', title: 'تم نشر مشروع جديد', desc: 'مشروع الذكاء الاصطناعي رقم 12', time: 'منذ 5 دقائق', color: 'text-emerald-400' },
-  { id: '2', icon: '💬', title: 'رسالة جديدة من المساعد', desc: 'تحليل الأداء الأسبوعي جاهز', time: 'منذ 18 دقيقة', color: 'text-blue-400' },
-  { id: '3', icon: '⭐', title: 'هدف تجاوز المليون', desc: 'اقتربنا من الهدف المحدد بنسبة 87%', time: 'منذ ساعة', color: 'text-amber-400' },
-  { id: '4', icon: '🔄', title: 'مزامنة Google Drive', desc: 'تمت مزامنة 24 ملف بنجاح', time: 'منذ 2 ساعة', color: 'text-violet-400' },
-];
-
-const PLATFORMS = [
-  { name: 'TikTok', icon: '🎵', followers: '1.2M', growth: '+15%', color: 'from-pink-500/20 to-rose-500/10', border: 'border-pink-500/30', bar: 85 },
-  { name: 'YouTube', icon: '▶️', followers: '680K', growth: '+8%', color: 'from-red-500/20 to-orange-500/10', border: 'border-red-500/30', bar: 62 },
-  { name: 'Instagram', icon: '📸', followers: '430K', growth: '+22%', color: 'from-purple-500/20 to-violet-500/10', border: 'border-purple-500/30', bar: 78 },
-  { name: 'X (Twitter)', icon: '🐦', followers: '260K', growth: '+5%', color: 'from-sky-500/20 to-blue-500/10', border: 'border-sky-500/30', bar: 45 },
-];
-
-const INIT_MESSAGES: ChatMessage[] = [
-  { id: '1', role: 'assistant', content: 'مرحباً! أنا "الناتسيون" 🤖 مساعدك الذكي المتكامل. كيف يمكنني إلهامك اليوم؟ 🚀', timestamp: '10:30' },
-  { id: '2', role: 'user', content: 'ما هو أداء المحتوى هذا الأسبوع؟', timestamp: '10:32' },
-  { id: '3', role: 'assistant', content: 'في القمة كالعادة! حقق المحتوى هذا الأسبوع 2.3M مشاهدة بزيادة 18%. أنصحك بصنع سيناريو جديد لاستغلال التريند الحالي.', timestamp: '10:33' },
+const creatorTools = [
+  { id: 'thumbnail', label: 'Thumbnail Designer', desc: 'Generate a Pollinations-style image.', icon: ImageIcon, color: 'text-rose-400', bg: 'bg-rose-400/10' },
+  { id: 'script', label: 'Script Writer', desc: 'Using Gemini to generate scripts.', icon: FileText, color: 'text-blue-400', bg: 'bg-blue-400/10' },
+  { id: 'voice', label: 'Voice Cloning', desc: 'Linked to voice Cloning ElevenLabs.', icon: Mic2, color: 'text-amber-400', bg: 'bg-amber-400/10' },
+  { id: 'title', label: 'Viral Title Generator', desc: 'Generate a Viral Title Generator', icon: Type, color: 'text-indigo-400', bg: 'bg-indigo-400/10' },
+  { id: 'article', label: 'Article Writer', desc: 'Generate an Article Writer', icon: FileText, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
 ];
 
 /* ─────────────────────────────── Component ─────────────────────────────── */
 
 export default function DashboardPage() {
-  const { projects, tasks, fetchProjects } = useStore();
-  const [loading, setLoading] = useState(false);
-  const [chatInput, setChatInput] = useState('');
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(INIT_MESSAGES);
-  const [isTyping, setIsTyping] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    fetchProjects();
-  }, [fetchProjects]);
-
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatMessages, isTyping]);
-
-  const handleRefresh = async () => {
-    setLoading(true);
-    await fetchProjects();
-    setTimeout(() => setLoading(false), 800);
-  };
-
-  const handleSend = () => {
-    if (!chatInput.trim()) return;
-    const userMsg: ChatMessage = {
-      id: String(Date.now()),
-      role: 'user',
-      content: chatInput,
-      timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
-    };
-    setChatMessages(prev => [...prev, userMsg]);
-    setChatInput('');
-    setIsTyping(true);
-
-    setTimeout(() => {
-      setIsTyping(false);
-      const aiMsg: ChatMessage = {
-        id: String(Date.now() + 1),
-        role: 'assistant',
-        content: 'شكراً على سؤالك! جاري تحليل البيانات وسأقدم لك توصيات مخصصة بناءً على أدائك الفعلي. 🎯',
-        timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
-      };
-      setChatMessages(prev => [...prev, aiMsg]);
-    }, 1800);
-  };
-
-  const incompleteTasks = tasks.filter(t => t.status !== 'DONE').slice(0, 5);
+  const [activeTab, setActiveTab] = useState<DashboardTab>('code');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [selectedFile, setSelectedFile] = useState('user_auth_controller.js');
 
   return (
-    <div className="min-h-screen p-4 md:p-6 lg:p-8 space-y-8">
-
-      {/* ─── Hero Header ─── */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-      >
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-400 uppercase tracking-widest">
-              Omnipotent Master
-            </span>
-            <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-semibold">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              نشط الآن
-            </span>
-          </div>
-          <h1 className="text-2xl md:text-3xl lg:text-4xl font-extrabold bg-gradient-to-r from-blue-400 via-cyan-300 to-violet-400 bg-clip-text text-transparent">
-            مرحباً، راشد AlKing 👑
-          </h1>
-          <p className="text-gray-500 mt-1 text-sm flex items-center gap-2">
-            <Clock className="h-3.5 w-3.5" />
-            {new Date().toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleRefresh}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl glass-card border border-blue-500/20 text-blue-400 hover:border-blue-400/50 text-sm font-medium transition-all"
-          >
-            <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
-            تحديث
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="relative flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white text-sm font-bold shadow-lg shadow-blue-500/30 transition-all"
-          >
-            <Sparkles className="h-4 w-4" />
-            توليد تقرير ذكي
-            <span className="absolute -top-1 -left-1 flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-400"></span>
-            </span>
-          </motion.button>
-        </div>
-      </motion.div>
-
-      {/* ─── Stats Grid (6 cards) ─── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        {STATS.map((stat) => (
-          <div key={stat.title} className="xl:col-span-1 lg:col-span-1 sm:col-span-1">
-            <StatsCard {...stat} />
-          </div>
-        ))}
-      </div>
-
-      {/* ─── حساباتي والمواقع ─── */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.15 }}
-        className="space-y-6"
-      >
-        {/* Section Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30">
-              <Globe className="h-5 w-5 text-cyan-400" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-white">حساباتي والمواقع</h2>
-              <p className="text-xs text-gray-500">إدارة ومتابعة جميع حساباتك الاجتماعية</p>
-            </div>
-          </div>
-          <AddAccountButton />
-        </div>
-
-        {/* Platform Quick Icons */}
-        <div className="flex items-center gap-3">
-          {[
-            { name: 'TikTok', icon: Music, color: 'from-pink-500/20 to-rose-500/20', border: 'border-pink-500/30', text: 'text-pink-400' },
-            { name: 'YouTube', icon: Youtube, color: 'from-red-500/20 to-orange-500/20', border: 'border-red-500/30', text: 'text-red-400' },
-            { name: 'Instagram', icon: Instagram, color: 'from-purple-500/20 to-violet-500/20', border: 'border-purple-500/30', text: 'text-purple-400' },
-            { name: 'Snapchat', icon: Ghost, color: 'from-yellow-500/20 to-amber-500/20', border: 'border-yellow-500/30', text: 'text-yellow-400' },
-          ].map((platform) => (
-            <motion.div
-              key={platform.name}
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-              className={cn(
-                'flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r border cursor-pointer transition-all',
-                platform.color, platform.border
-              )}
-            >
-              <platform.icon className={cn('h-4 w-4', platform.text)} />
-              <span className="text-sm font-semibold text-white">{platform.name}</span>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Social Stat Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {socialAccounts.map((account, i) => (
-            <motion.div
-              key={account.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 * i + 0.2 }}
-            >
-              <SocialStatCard account={account} />
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* ─── Charts Row ─── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <WeeklyActivityChart />
-        <ActivityHeatmap />
-      </div>
-
-      {/* ─── Content & Auto-Post Logic ─── */}
-      <div className="w-full">
-        <ContentScheduler />
-      </div>
-
-      {/* ─── Main Content: Platforms + Tasks + Chat ─── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-        {/* Platform Performance */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="glass-card border border-blue-500/20 p-6 space-y-4"
+    <div className="flex flex-col h-full bg-[#0a0c10]">
+      {/* ─── Top Navigation Tabs ─── */}
+      <div className="flex items-center justify-center gap-4 p-4 border-b border-white/5 bg-[#0d1117]">
+        <button
+          onClick={() => setActiveTab('code')}
+          className={cn(
+            "flex items-center gap-2 px-8 py-2.5 rounded-xl text-sm font-bold transition-all border",
+            activeTab === 'code' 
+              ? "bg-blue-500/10 border-blue-500/50 text-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.15)]" 
+              : "bg-white/5 border-transparent text-gray-500 hover:text-gray-300 hover:bg-white/10"
+          )}
         >
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-bold text-white flex items-center gap-2">
-                <Globe className="h-5 w-5 text-blue-400" />
-                أداء المنصات
-              </h3>
-              <p className="text-xs text-gray-500 mt-0.5">آخر 30 يوم</p>
-            </div>
-            <Link href="/analytics" className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors">
-              التفاصيل <ChevronRight className="h-3 w-3" />
-            </Link>
-          </div>
+          <FileCode className="h-4 w-4" />
+          [ ] Code Inspector
+        </button>
+        <button
+          onClick={() => setActiveTab('content')}
+          className={cn(
+            "flex items-center gap-2 px-8 py-2.5 rounded-xl text-sm font-bold transition-all border",
+            activeTab === 'content' 
+              ? "bg-amber-500/10 border-amber-500/50 text-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.15)]" 
+              : "bg-white/5 border-transparent text-gray-500 hover:text-gray-300 hover:bg-white/10"
+          )}
+        >
+          <Play className="h-4 w-4" />
+          [ ] Content Studio
+        </button>
+      </div>
 
-          <div className="space-y-3">
-            {PLATFORMS.map((p, i) => (
-              <motion.div
-                key={p.name}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1 * i + 0.3 }}
-                className={cn(
-                  'group p-3 rounded-xl bg-gradient-to-r border transition-all duration-300 cursor-pointer hover:scale-[1.02]',
-                  p.color, p.border
-                )}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">{p.icon}</span>
-                    <div>
-                      <p className="text-sm font-bold text-white">{p.name}</p>
-                      <p className="text-[10px] text-gray-400">{p.followers} متابع</p>
+      <div className="flex-1 overflow-hidden relative">
+        <AnimatePresence mode="wait">
+          {activeTab === 'code' ? (
+            <motion.div
+              key="code-inspector"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="h-full flex p-6 gap-6"
+            >
+              {/* Center: Code Editor */}
+              <div className="flex-1 flex flex-col rounded-2xl bg-[#0d1117] border border-white/10 overflow-hidden shadow-2xl">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-white/[0.02]">
+                  <div className="flex items-center gap-3">
+                    <div className="flex gap-1.5">
+                      <div className="h-3 w-3 rounded-full bg-rose-500/20 border border-rose-500/40" />
+                      <div className="h-3 w-3 rounded-full bg-amber-500/20 border border-amber-500/40" />
+                      <div className="h-3 w-3 rounded-full bg-emerald-500/20 border border-emerald-500/40" />
+                    </div>
+                    <div className="h-4 w-px bg-white/10 mx-2" />
+                    <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-white/5 border border-white/10">
+                      <FileCode className="h-3.5 w-3.5 text-blue-400" />
+                      <span className="text-xs font-medium text-gray-300">{selectedFile}</span>
                     </div>
                   </div>
-                  <span className="text-sm font-extrabold text-emerald-400">{p.growth}</span>
+                  <button className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold hover:bg-emerald-500/20 transition-all">
+                    <Upload className="h-3.5 w-3.5" />
+                    Upload Project
+                  </button>
                 </div>
-                <div className="h-1.5 rounded-full bg-black/20 overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${p.bar}%` }}
-                    transition={{ duration: 1, delay: 0.1 * i + 0.5, ease: 'easeOut' }}
-                    className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400 shadow-sm shadow-blue-500/40"
-                  />
+                <div className="flex-1 p-6 font-mono text-sm text-gray-400 leading-relaxed overflow-auto custom-scrollbar">
+                  <pre className="relative">
+                    <div className="absolute -left-2 top-0 text-gray-600 text-right pr-4 border-r border-white/5 select-none text-[10px]">
+                      {Array.from({length: 25}).map((_, i) => (
+                        <div key={i} className="h-[21px]">{i + 1}</div>
+                      ))}
+                    </div>
+                    <code className="pl-8 block">{`import { Ruser, Resonuse } from 'service';
+import { User.names } from '/access';
+import { Bustomoasent } from '/ge/auth/akannts';
+import { Keynoitics } from 'agets/user/rconfigs';
+
+export default var user_auth_controller: SetErgect {
+
+  const resset = usetAracets(:target, agi) => {
+    sustemt.getDenoates.request()
+    return hits;
+  });
+
+  @roorit timestruts
+  export default customization[ProjectAr, () => {
+    if (!request.deitaliedi&compliscablerdate=="user?") => {
+      request.log(sselected);
+    });
+  };
+
+  export user_auth_controller(iobject) => {
+    consot.log.consoleReason('ontroller'zed'name, 'user'');
+    if (resset.agin.privated(user))
+    return user;
+  });`}</code>
+                  </pre>
                 </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
+              </div>
 
-        {/* File Explorer */}
-        <div className="flex flex-col h-[480px]">
-          <FileExplorer />
-        </div>
-
-        {/* AI Chat */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="glass-card border border-cyan-500/20 p-6 flex flex-col h-[480px]"
-        >
-          <div className="flex items-center justify-between mb-4 shrink-0">
-            <div>
-              <h3 className="font-bold text-white flex items-center gap-2">
-                <Brain className="h-5 w-5 text-cyan-400" />
-                الناتسيون
-              </h3>
-              <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                نشط · GPT-4 Turbo
-              </p>
-            </div>
-            <Link href="/chat" className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 transition-colors">
-              توسيع <ArrowRight className="h-3 w-3" />
-            </Link>
-          </div>
-
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto space-y-3 mb-4 pr-1">
-            <AnimatePresence initial={false}>
-              {chatMessages.map((msg) => (
-                <motion.div
-                  key={msg.id}
-                  initial={{ opacity: 0, y: 12, scale: 0.96 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.3 }}
-                  className={cn('flex', msg.role === 'user' ? 'justify-start' : 'justify-end')}
-                >
-                  <div className={cn(
-                    'max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed',
-                    msg.role === 'user'
-                      ? 'bg-gradient-to-br from-blue-500/25 to-cyan-500/15 border border-blue-500/30 text-white rounded-tr-sm'
-                      : 'bg-gray-800/70 border border-gray-700/50 text-gray-200 rounded-tl-sm'
-                  )}>
-                    {msg.content}
-                    <p className="text-[10px] text-gray-600 mt-1">{msg.timestamp}</p>
+              {/* Right: Analysis Terminal */}
+              <div className="w-[380px] flex flex-col gap-6">
+                <div className="flex-1 rounded-2xl bg-[#0d1117] border border-white/10 p-6 shadow-2xl">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-2">
+                      <Terminal className="h-4 w-4 text-blue-400" />
+                      <h3 className="text-sm font-bold text-white uppercase tracking-wider">Analysis Terminal</h3>
+                    </div>
+                    <MoreVertical className="h-4 w-4 text-gray-600" />
                   </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
 
-            {/* Typing indicator */}
-            <AnimatePresence>
-              {isTyping && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 8 }}
-                  className="flex justify-end"
-                >
-                  <div className="bg-gray-800/70 border border-gray-700/50 rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-1.5">
-                    {[0, 0.15, 0.3].map((delay, i) => (
-                      <motion.div
-                        key={i}
-                        animate={{ y: [0, -5, 0] }}
-                        transition={{ duration: 0.6, repeat: Infinity, delay }}
-                        className="h-1.5 w-1.5 rounded-full bg-cyan-400"
-                      />
-                    ))}
+                  <div className="space-y-4 mb-8">
+                    <h4 className="text-xl font-black text-white flex items-center gap-2">
+                      Gemini Project Audit
+                    </h4>
+                    <div className="space-y-2">
+                      {codeHealthMetrics.map((metric, i) => (
+                        <div key={i} className={cn("px-4 py-3 rounded-xl border text-xs font-bold flex items-center gap-3", metric.color)}>
+                          <div className={cn("h-3 w-3 rounded-full", metric.status === 'critical' ? 'bg-rose-500' : metric.status === 'warning' ? 'bg-amber-500' : 'bg-emerald-500')} />
+                          {metric.label}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-            <div ref={chatEndRef} />
-          </div>
 
-          {/* Quick Prompts */}
-          <div className="flex flex-wrap gap-2 mb-3 shrink-0">
-            {['سيناريو فيديو', 'أفكار محتوى', 'برومبت صور'].map(prompt => (
-              <button 
-                key={prompt}
-                onClick={() => setChatInput(prompt)}
-                className="px-2.5 py-1 text-[10px] sm:text-xs font-semibold rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500/20 transition-colors"
-              >
-                {prompt}
-              </button>
-            ))}
-          </div>
-
-          {/* Input */}
-          <div className="flex gap-2 shrink-0">
-            <input
-              type="text"
-              value={chatInput}
-              onChange={e => setChatInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSend()}
-              placeholder="تحدث مع الناتسيون..."
-              className="flex-1 bg-gray-800/50 border border-gray-700/40 hover:border-blue-500/30 focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600 outline-none transition-all"
-            />
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.92 }}
-              onClick={handleSend}
-              disabled={!chatInput.trim()}
-              className="px-3 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 disabled:opacity-40 disabled:cursor-not-allowed text-white shadow-lg shadow-blue-500/30 transition-all"
+                  <div className="pt-6 border-t border-white/5">
+                    <h5 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-6 text-center">Project Summary</h5>
+                    <div className="relative h-48 w-48 mx-auto">
+                      <svg className="h-full w-full -rotate-90" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="45" fill="transparent" stroke="currentColor" strokeWidth="8" className="text-white/5" />
+                        <circle cx="50" cy="50" r="45" fill="transparent" stroke="currentColor" strokeWidth="8" strokeDasharray="282.7" strokeDashoffset="42.4" className="text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]" />
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                        <span className="text-2xl font-black text-white">85%</span>
+                        <span className="text-[8px] font-bold text-gray-500 uppercase">Project Health</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="content-studio"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="h-full flex flex-col p-6 gap-6 bg-gradient-to-br from-[#0a0c10] via-[#0d1117] to-[#1a1c23]"
             >
-              <Send className="h-4 w-4" />
-            </motion.button>
+              <div className="flex-1 flex gap-6 min-h-0">
+                {/* Center: Video Editor / Canvas */}
+                <div className="flex-1 flex flex-col rounded-2xl bg-[#0d1117]/80 backdrop-blur-xl border border-white/10 overflow-hidden shadow-2xl">
+                  <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/[0.02]">
+                    <h3 className="text-sm font-black text-white uppercase tracking-tighter italic">AI Content Studio: CapCut Style</h3>
+                    <div className="flex gap-2">
+                      <div className="p-1.5 rounded-lg bg-white/5 border border-white/10 text-white cursor-pointer hover:bg-white/10 transition-all">
+                        <Settings className="h-4 w-4" />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex-1 p-8 flex items-center justify-center">
+                    <div className="w-full max-w-2xl aspect-video rounded-3xl bg-black border-4 border-white/5 shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col items-center justify-center relative group overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-t from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                      <div className="p-6 rounded-full bg-white/5 border border-white/10 mb-4 group-hover:scale-110 transition-transform duration-500">
+                        <ImageIcon className="h-12 w-12 text-gray-600" />
+                      </div>
+                      <p className="text-sm font-bold text-gray-500">Drag and drop workspace</p>
+                      <span className="text-[10px] text-gray-700 mt-2 uppercase tracking-widest">or</span>
+                      <button className="mt-4 px-6 py-2 rounded-full bg-cyan-500 text-black font-black text-[10px] uppercase tracking-tighter hover:bg-cyan-400 transition-all">
+                        + Import Media
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Timeline Placeholder */}
+                  <div className="h-48 border-t border-white/10 bg-black/40 p-4">
+                    <div className="flex items-center justify-between mb-4 px-2">
+                      <div className="flex gap-4">
+                        <Scissors className="h-4 w-4 text-gray-500 cursor-pointer hover:text-white" />
+                        <Type className="h-4 w-4 text-gray-500 cursor-pointer hover:text-white" />
+                        <Mic2 className="h-4 w-4 text-gray-500 cursor-pointer hover:text-white" />
+                      </div>
+                      <div className="text-[10px] font-mono text-gray-600 tracking-widest">00:00:00 / 00:00:00</div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-10 w-full bg-white/5 rounded-lg border border-white/10 relative overflow-hidden">
+                        <div className="absolute left-0 top-0 bottom-0 w-32 bg-cyan-500/20 border-r border-cyan-500/50" />
+                      </div>
+                      <div className="h-10 w-full bg-white/5 rounded-lg border border-white/10 relative overflow-hidden">
+                        <div className="absolute left-20 top-0 bottom-0 w-48 bg-violet-500/20 border-r border-violet-500/50" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right: Creator Toolbox */}
+                <div className="w-[380px] flex flex-col gap-6">
+                  <div className="flex-1 rounded-2xl bg-[#0d1117]/80 backdrop-blur-xl border border-white/10 p-6 shadow-2xl overflow-y-auto custom-scrollbar">
+                    <div className="flex items-center justify-between mb-8">
+                      <h3 className="text-sm font-black text-white uppercase tracking-wider">Creator Toolbox</h3>
+                      <MoreVertical className="h-4 w-4 text-gray-600" />
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <h4 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">AI Assistant Tools</h4>
+                      {creatorTools.map((tool) => (
+                        <button key={tool.id} className="w-full p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-blue-500/30 hover:bg-white/[0.08] transition-all group flex items-start gap-4 text-right">
+                          <div className={cn("p-3 rounded-xl transition-transform group-hover:scale-110", tool.bg)}>
+                            <tool.icon className={cn("h-5 w-5", tool.color)} />
+                          </div>
+                          <div className="flex-1">
+                            <h5 className="text-sm font-black text-gray-200 group-hover:text-white transition-colors">{tool.label}</h5>
+                            <p className="text-[10px] text-gray-500 leading-tight mt-1">{tool.desc}</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* ─── Bottom Footer Status ─── */}
+      <div className="px-6 py-2 border-t border-white/5 bg-[#0d1117] flex items-center justify-between">
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2">
+            <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">System Online</span>
           </div>
-        </motion.div>
+          <span className="text-[10px] text-gray-600 font-medium">Credits Remaining: <span className="text-blue-400">10,000 (ElevenLabs)</span> | Media Files: <span className="text-amber-400">8</span> | Gemini Scripting: <span className="text-emerald-400 font-black uppercase">Unlimited</span></span>
+        </div>
+        <div className="text-[9px] font-mono text-gray-700">Total Files: 42 | Lines of Code: 12,500 | Gemini AI Context: 1M tokens free tier</div>
       </div>
-
-      {/* ─── Bottom Task Manager area ─── */}
-      <div className="w-full">
-        <TaskManager />
-      </div>
-
     </div>
   );
 }

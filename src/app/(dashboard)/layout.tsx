@@ -42,21 +42,21 @@ export default function DashboardLayout({
       <div className="bg-orb bg-orb-2" />
       <div className="bg-orb bg-orb-3" />
 
-      {/* Right Sidebar - Platform Navigation */}
+      {/* Left Sidebar - File Explorer & Project History */}
+      <LeftSidebar />
+
+      {/* Main Content Area - Center: Code Editor and Analysis Results */}
+      <main className="flex-1 overflow-auto relative z-10 border-x border-blue-500/10">
+        {children}
+      </main>
+
+      {/* Right Sidebar - AI Agent Suite (10 Tools) */}
       <RightSidebar 
         onSignOut={handleSignOut}
         userName={profile?.full_name || user?.email?.split('@')[0] || 'راشد Alking'}
         userEmail={user?.email || 'rashed@alking.com'}
         userAvatar={profile?.avatar_url}
       />
-
-      {/* Main Content Area */}
-      <main className="flex-1 overflow-auto relative z-10">
-        {children}
-      </main>
-
-      {/* Left Sidebar - Linked Accounts */}
-      <LeftSidebar />
     </div>
   );
 }

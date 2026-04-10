@@ -51,8 +51,8 @@ export default function LoginPage() {
       if (result.data?.session) {
         console.log('Login successful, session:', result.data.session);
         await checkSession();
-        router.push('/');
-        router.refresh();
+        // Force a hard reload to clear any client-side cache and show the new layout
+        window.location.href = '/';
       } else {
         setError('لم يتم العثور على جلسة');
       }

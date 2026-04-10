@@ -1,53 +1,41 @@
- 'use client';
+'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard,
-  FolderKanban,
   MessageSquare,
-  Search,
-  Settings,
-  Brain,
-  Plus,
-  LogOut,
-  User,
+  Zap,
   ChevronDown,
   ChevronUp,
-  Zap,
-  Bell,
-  BarChart2,
-  Shield,
+  Brain,
+  Sparkles,
+  Search,
+  Mic2,
+  Scissors,
+  Users,
+  Layout,
+  UserCircle,
   Globe,
+  Image,
+  TrendingUp,
+  DollarSign,
+  Send,
+  LogOut,
+  Settings,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const mainNavItems = [
-  { href: '/', label: 'لوحة التحكم', icon: LayoutDashboard, badge: null },
-  { href: '/projects', label: 'المشاريع', icon: FolderKanban, badge: '12' },
-  { href: '/chat', label: 'المساعد الذكي', icon: MessageSquare, badge: '3' },
-  { href: '/analytics', label: 'التحليلات', icon: BarChart2, badge: null },
-  { href: '/search', label: 'البحث الذكي', icon: Search, badge: null },
-  { href: '/trend-radar', label: 'رادار الترندات', icon: Zap, badge: 'NEW' },
-  { href: '/voice-station', label: 'محطة الصوت', icon: Zap, badge: 'NEW' },
-  { href: '/auto-clipper', label: 'المقص الذكي', icon: Zap, badge: 'NEW' },
-  { href: '/engagement-bot', label: 'بوت التفاعل', icon: Zap, badge: 'NEW' },
-  { href: '/live-center', label: 'مركز التحكم', icon: Zap, badge: 'NEW' },
-  { href: '/ai-persona', label: 'الشخصية الرقمية', icon: Zap, badge: 'NEW' },
-  { href: '/competitors', label: 'رادار المنافسين', icon: Zap, badge: 'NEW' },
-  { href: '/global-dubber', label: 'المترجم العالمي', icon: Zap, badge: 'NEW' },
-  { href: '/thumbnail-studio', label: 'استوديو الصور', icon: Zap, badge: 'NEW' },
-  { href: '/revenue', label: 'لوحة الأرباح', icon: Zap, badge: 'NEW' },
-  { href: '/security', label: 'الأمان', icon: Shield, badge: null },
-  { href: '/integrations', label: 'التكاملات', icon: Globe, badge: '2' },
-  { href: '/settings', label: 'الإعدادات', icon: Settings, badge: null },
-];
-
-const quickItems = [
-  { href: '/projects?new=true', label: 'مشروع جديد', icon: Plus },
-  { href: '/notifications', label: 'الإشعارات', icon: Bell },
+const agentTools = [
+  { id: 'trend', label: 'رادار الترندات', icon: TrendingUp, color: 'text-blue-400', bg: 'bg-blue-400/10' },
+  { id: 'voice', label: 'محطة الصوت', icon: Mic2, color: 'text-violet-400', bg: 'bg-violet-400/10' },
+  { id: 'clipper', label: 'المقص الذكي', icon: Scissors, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
+  { id: 'engagement', label: 'بوت التفاعل', icon: Users, color: 'text-pink-400', bg: 'bg-pink-400/10' },
+  { id: 'live', label: 'مركز التحكم', icon: Layout, color: 'text-amber-400', bg: 'bg-amber-400/10' },
+  { id: 'persona', label: 'الشخصية الرقمية', icon: UserCircle, color: 'text-rose-400', bg: 'bg-rose-400/10' },
+  { id: 'competitors', label: 'رادار المنافسين', icon: Search, color: 'text-cyan-400', bg: 'bg-cyan-400/10' },
+  { id: 'dubber', label: 'المترجم العالمي', icon: Globe, color: 'text-indigo-400', bg: 'bg-indigo-400/10' },
+  { id: 'thumbnail', label: 'استوديو الصور', icon: Image, color: 'text-orange-400', bg: 'bg-orange-400/10' },
+  { id: 'revenue', label: 'لوحة الأرباح', icon: DollarSign, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
 ];
 
 interface RightSidebarProps {
@@ -63,242 +51,156 @@ export function RightSidebar({
   userEmail = 'rashed@alking.com',
   userAvatar,
 }: RightSidebarProps) {
-  const pathname = usePathname();
-  const [quickExpanded, setQuickExpanded] = useState(true);
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [chatInput, setChatInput] = useState('');
+  const [isToolsExpanded, setIsToolsExpanded] = useState(true);
+  const [messages, setMessages] = useState([
+    { role: 'assistant', content: 'مرحباً! أنا وكيلك الذكي. كيف يمكنني مساعدتك في تحليل مشروعك اليوم؟ 🚀' }
+  ]);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const SidebarContent = () => (
-    <div className="flex h-full w-full flex-col">
-      {/* ─── Logo ─── */}
-      <div className="flex items-center gap-3 px-5 py-5 border-b border-blue-500/20">
-        <motion.div
-          whileHover={{ rotate: 360 }}
-          transition={{ duration: 0.7, ease: 'easeInOut' }}
-          className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 shadow-lg shadow-blue-500/40"
-        >
-          <Brain className="h-7 w-7 text-white" />
-        </motion.div>
-        <div className="flex-1">
-          <h1 className="font-extrabold text-lg bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
-            Memory AI
-          </h1>
-          <p className="text-[10px] text-blue-300/50 font-medium tracking-widest uppercase">
-            Omnipotent Master
-          </p>
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSend = () => {
+    if (!chatInput.trim()) return;
+    setMessages(prev => [...prev, { role: 'user', content: chatInput }]);
+    setChatInput('');
+    
+    // Simulate AI response
+    setTimeout(() => {
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: 'جاري تنفيذ طلبك... سأقوم بتحليل الكود وتقديم تقرير مفصل خلال لحظات. ⚙️' 
+      }]);
+    }, 1000);
+  };
+
+  return (
+    <motion.div
+      initial={{ x: -80, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+      className="hidden lg:flex h-full w-80 flex-col glass-sidebar border-r border-blue-500/15 relative z-20"
+    >
+      {/* ─── Header ─── */}
+      <div className="p-5 border-b border-blue-500/10">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 shadow-lg shadow-blue-500/30">
+            <Brain className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h2 className="font-extrabold text-sm text-white">AI Agent Suite</h2>
+            <p className="text-[10px] text-blue-400 font-medium">الوكيل المستقل</p>
+          </div>
         </div>
-        <div className="h-2 w-2 rounded-full bg-emerald-400 shadow shadow-emerald-400/60 animate-pulse" />
       </div>
 
-      {/* ─── New Project CTA ─── */}
-      <div className="px-4 pt-4 pb-2">
-        <Link
-          href="/projects?new=true"
-          className="group relative flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-cyan-500 font-semibold text-sm transition-all duration-300 shadow-lg shadow-blue-500/30 hover:shadow-blue-400/50 overflow-hidden"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-          <Zap className="h-4 w-4" />
-          مشروع جديد
-        </Link>
-      </div>
-
-      {/* ─── Main Navigation ─── */}
-      <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
-        <p className="px-3 py-2 text-[10px] font-bold text-blue-400/60 uppercase tracking-[0.15em]">
-          الأقسام الرئيسية
-        </p>
-
-        {mainNavItems.map((item, i) => {
-          const isActive =
-            pathname === item.href ||
-            (item.href !== '/' && pathname.startsWith(item.href));
-
-          return (
-            <motion.div
-              key={item.href}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.05, duration: 0.4 }}
-            >
-              <Link
-                href={item.href}
-                className={cn(
-                  'nav-item group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
-                  isActive
-                    ? 'active bg-gradient-to-r from-blue-500/20 to-transparent text-white border border-blue-500/30'
-                    : 'text-gray-400 hover:text-gray-200'
-                )}
-              >
-                {/* Active glow pulse */}
-                {isActive && (
-                  <motion.div
-                    layoutId="active-pill"
-                    className="absolute inset-0 rounded-xl bg-blue-500/10"
-                  />
-                )}
-                <item.icon
-                  className={cn(
-                    'h-[18px] w-[18px] transition-colors shrink-0',
-                    isActive ? 'text-blue-400' : 'text-gray-500 group-hover:text-gray-300'
-                  )}
-                />
-                <span className="flex-1">{item.label}</span>
-                {item.badge && (
-                  <span className={cn(
-                    'flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold',
-                    isActive
-                      ? 'bg-blue-500/40 text-blue-200'
-                      : 'bg-gray-700/60 text-gray-400'
-                  )}>
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
-            </motion.div>
-          );
-        })}
-
-        {/* Quick Access */}
-        <div className="pt-3">
-          <button
-            onClick={() => setQuickExpanded(!quickExpanded)}
-            className="flex items-center justify-between w-full px-3 py-1.5 text-[10px] font-bold text-blue-400/60 uppercase tracking-[0.15em] hover:text-blue-300 transition-colors"
-          >
-            <span>الوصول السريع</span>
-            {quickExpanded ? (
-              <ChevronUp className="h-3 w-3" />
-            ) : (
-              <ChevronDown className="h-3 w-3" />
-            )}
-          </button>
-
-          <AnimatePresence>
-            {quickExpanded && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden space-y-0.5 mt-1"
-              >
-                {quickItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:text-gray-200 transition-all duration-200"
-                  >
-                    <item.icon className="h-[18px] w-[18px] text-gray-500" />
-                    {item.label}
-                  </Link>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </nav>
-
-      {/* ─── System Status ─── */}
-      <div className="mx-4 mb-3 rounded-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/5 border border-blue-500/20 p-3">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs text-gray-400 font-medium">حالة النظام</span>
-          <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 inline-block animate-pulse" />
-            متصل
-          </span>
-        </div>
-        <div className="space-y-1.5">
-          {[
-            { label: 'وحدة المعالجة', value: 34 },
-            { label: 'الذاكرة', value: 67 },
-          ].map((m) => (
-            <div key={m.label}>
-              <div className="flex justify-between text-[10px] text-gray-500 mb-0.5">
-                <span>{m.label}</span>
-                <span>{m.value}%</span>
-              </div>
-              <div className="h-1 rounded-full bg-gray-800 overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${m.value}%` }}
-                  transition={{ duration: 1, delay: 0.5 }}
-                  className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400"
-                />
+      {/* ─── AI Agent Chat ─── */}
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+          {messages.map((msg, i) => (
+            <div key={i} className={cn(
+              "flex flex-col gap-1 max-w-[85%]",
+              msg.role === 'user' ? "mr-auto items-end" : "ml-auto items-start"
+            )}>
+              <div className={cn(
+                "px-3 py-2 rounded-2xl text-xs leading-relaxed shadow-sm",
+                msg.role === 'user' 
+                  ? "bg-blue-600 text-white rounded-br-none" 
+                  : "bg-white/5 border border-white/10 text-gray-200 rounded-bl-none"
+              )}>
+                {msg.content}
               </div>
             </div>
           ))}
+          <div ref={chatEndRef} />
         </div>
+
+        {/* ─── Chat Input ─── */}
+        <div className="p-4 border-t border-blue-500/10 bg-black/10">
+          <div className="relative group">
+            <input 
+              type="text" 
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+              placeholder="اطلب من الوكيل (مثلاً: حلل الكود)..."
+              className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-all"
+            />
+            <button 
+              onClick={handleSend}
+              className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 bg-blue-500 hover:bg-blue-400 rounded-lg text-white transition-all shadow-lg shadow-blue-500/20"
+            >
+              <Send className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Tools Suite ─── */}
+      <div className="border-t border-blue-500/10">
+        <button 
+          onClick={() => setIsToolsExpanded(!isToolsExpanded)}
+          className="w-full flex items-center justify-between px-5 py-3 hover:bg-white/5 transition-all"
+        >
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-amber-400" />
+            <span className="text-xs font-bold text-gray-200">الأدوات الذكية (10)</span>
+          </div>
+          {isToolsExpanded ? <ChevronDown className="h-4 w-4 text-gray-500" /> : <ChevronUp className="h-4 w-4 text-gray-500" />}
+        </button>
+
+        <AnimatePresence initial={false}>
+          {isToolsExpanded && (
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="grid grid-cols-2 gap-2 p-4 pt-0">
+                {agentTools.map((tool) => (
+                  <button 
+                    key={tool.id}
+                    className="flex flex-col items-center gap-2 p-3 rounded-xl bg-white/5 border border-white/5 hover:border-blue-500/30 hover:bg-blue-500/5 transition-all group"
+                  >
+                    <div className={cn("p-2 rounded-lg transition-transform group-hover:scale-110", tool.bg)}>
+                      <tool.icon className={cn("h-4 w-4", tool.color)} />
+                    </div>
+                    <span className="text-[10px] font-medium text-gray-400 group-hover:text-white transition-colors">
+                      {tool.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* ─── User Profile ─── */}
-      <div className="px-4 py-4 border-t border-blue-500/15">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="relative">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-blue-500/30 to-cyan-500/20 border-2 border-blue-500/40 shadow-lg shadow-blue-500/20">
-              {userAvatar ? (
-                <img src={userAvatar} alt="Avatar" className="h-full w-full rounded-full object-cover" />
-              ) : (
-                <User className="h-5 w-5 text-blue-300" />
-              )}
-            </div>
-            <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 border-2 border-[#0a0a1a] shadow shadow-emerald-400/50" />
+      <div className="p-4 border-t border-blue-500/10 bg-black/20">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full border border-blue-500/30 overflow-hidden bg-blue-500/10 flex items-center justify-center">
+            {userAvatar ? (
+              <img src={userAvatar} alt={userName} className="h-full w-full object-cover" />
+            ) : (
+              <span className="text-blue-400 font-bold text-sm">{userName[0]}</span>
+            )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-white truncate">{userName}</p>
-            <p className="text-xs text-gray-500 truncate">{userEmail}</p>
+            <p className="text-xs font-bold text-white truncate">{userName}</p>
+            <p className="text-[10px] text-gray-500 truncate">{userEmail}</p>
           </div>
+          <button 
+            onClick={onSignOut}
+            className="p-2 text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
         </div>
-        <button
-          onClick={onSignOut}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-800/40 border border-gray-700/40 px-3 py-2.5 text-xs font-semibold text-gray-400 transition-all hover:bg-rose-500/15 hover:text-rose-400 hover:border-rose-500/30"
-        >
-          <LogOut className="h-3.5 w-3.5" />
-          تسجيل الخروج
-        </button>
       </div>
-    </div>
-  );
-
-  return (
-    <>
-      {/* Desktop Sidebar */}
-      <motion.div
-        initial={{ x: 80, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
-        className="hidden lg:flex h-full w-72 flex-col glass-sidebar glowing-border border-l-0 relative z-20"
-      >
-        <SidebarContent />
-      </motion.div>
-
-      {/* Mobile Toggle Button */}
-      <button
-        onClick={() => setIsMobileOpen(true)}
-        className="lg:hidden fixed top-4 right-4 z-50 flex h-10 w-10 items-center justify-center rounded-xl glass-card border border-blue-500/30 text-blue-400 shadow-lg"
-      >
-        <Brain className="h-5 w-5" />
-      </button>
-
-      {/* Mobile Drawer */}
-      <AnimatePresence>
-        {isMobileOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="lg:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
-              onClick={() => setIsMobileOpen(false)}
-            />
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="lg:hidden fixed right-0 top-0 bottom-0 z-50 w-72 glass-sidebar shadow-2xl"
-            >
-              <SidebarContent />
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </>
+    </motion.div>
   );
 }

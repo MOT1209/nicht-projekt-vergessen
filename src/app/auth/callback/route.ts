@@ -2,17 +2,20 @@ import { createClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/';
+  const requestUrl = new URL(request.url);
+  const code = requestUrl.searchParams.get('code');
+  const next = requestUrl.searchParams.get('next') ?? '/';
 
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
+      // استخدام الرابط الأصلي للموقع بشكل آمن
+      return NextResponse.redirect(`${requestUrl.origin}${next}`);
     }
+    console.error('Auth callback error:', error);
   }
 
-  return NextResponse.redirect(`${origin}/login`);
+  // في حال حدوث خطأ، العودة لصفحة تسجيل الدخول
+  return NextResponse.redirect(`${requestUrl.origin}/login`);
 }
