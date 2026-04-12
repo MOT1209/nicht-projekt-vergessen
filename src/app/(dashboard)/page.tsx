@@ -32,20 +32,26 @@ import { cn } from '@/lib/utils';
 
 type DashboardTab = 'code' | 'content';
 
+/* ─────────────────────────────── Utilities ─────────────────────────────── */
+
+const sanitizeInput = (input: string) => {
+  return input.replace(/[<>]/g, '');
+};
+
 /* ─────────────────────────────── Mock Data ─────────────────────────────── */
 
 const codeHealthMetrics = [
-  { label: 'Security Vulnerability (XSS)', status: 'critical', color: 'bg-rose-500/20 text-rose-400 border-rose-500/30' },
-  { label: 'Performance Optimizations (2 found)', status: 'warning', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
-  { label: 'Logical Corrections (Done)', status: 'success', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
+  { label: 'Security (XSS Protection Active)', status: 'success', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
+  { label: 'Performance (Sitemap & SEO Optimized)', status: 'success', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
+  { label: 'Logical Integrity (Verified)', status: 'success', color: 'bg-violet-500/20 text-violet-400 border-violet-500/30' },
 ];
 
 const creatorTools = [
-  { id: 'thumbnail', label: 'Thumbnail Designer', desc: 'Generate a Pollinations-style image.', icon: ImageIcon, color: 'text-rose-400', bg: 'bg-rose-400/10' },
-  { id: 'script', label: 'Script Writer', desc: 'Using Gemini to generate scripts.', icon: FileText, color: 'text-blue-400', bg: 'bg-blue-400/10' },
-  { id: 'voice', label: 'Voice Cloning', desc: 'Linked to voice Cloning ElevenLabs.', icon: Mic2, color: 'text-amber-400', bg: 'bg-amber-400/10' },
-  { id: 'title', label: 'Viral Title Generator', desc: 'Generate a Viral Title Generator', icon: Type, color: 'text-indigo-400', bg: 'bg-indigo-400/10' },
-  { id: 'article', label: 'Article Writer', desc: 'Generate an Article Writer', icon: FileText, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
+  { id: 'thumbnail', label: 'Thumbnail Designer', desc: 'توليد صور احترافية باستخدام Pollinations.', icon: ImageIcon, color: 'text-rose-400', bg: 'bg-rose-400/10' },
+  { id: 'script', label: 'Script Writer', desc: 'كتابة سيناريوهات ذكية باستخدام Gemini.', icon: FileText, color: 'text-blue-400', bg: 'bg-blue-400/10' },
+  { id: 'voice', label: 'Voice Cloning', desc: 'تحويل النص إلى صوت عبر ElevenLabs.', icon: Mic2, color: 'text-amber-400', bg: 'bg-amber-400/10' },
+  { id: 'title', label: 'Viral Title Generator', desc: 'توليد عناوين جذابة وفريدة.', icon: Type, color: 'text-indigo-400', bg: 'bg-indigo-400/10' },
+  { id: 'article', label: 'Article Writer', desc: 'كتابة مقالات متوافقة مع SEO.', icon: FileText, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
 ];
 
 /* ─────────────────────────────── Component ─────────────────────────────── */
@@ -53,12 +59,18 @@ const creatorTools = [
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<DashboardTab>('code');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [selectedFile, setSelectedFile] = useState('user_auth_controller.js');
+  const [selectedFile, setSelectedFile] = useState('user_auth_controller.ts');
+
+  // Logic for UI interactions
+  const handleAnalyze = () => {
+    setIsAnalyzing(true);
+    setTimeout(() => setIsAnalyzing(false), 2000);
+  };
 
   return (
-    <div className="flex flex-col h-full bg-[#0a0c10]">
+    <div className="flex flex-col h-full bg-[#0a0c10] text-right" dir="rtl">
       {/* ─── Top Navigation Tabs ─── */}
-      <div className="flex items-center justify-center gap-4 p-4 border-b border-white/5 bg-[#0d1117]">
+      <div className="flex items-center justify-center gap-4 p-4 border-b border-white/5 bg-[#0d1117]/80 backdrop-blur-xl sticky top-0 z-20">
         <button
           onClick={() => setActiveTab('code')}
           className={cn(
@@ -93,10 +105,10 @@ export default function DashboardPage() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="h-full flex p-6 gap-6"
+              className="h-full flex flex-col lg:flex-row p-4 lg:p-6 gap-6 overflow-auto lg:overflow-hidden"
             >
               {/* Center: Code Editor */}
-              <div className="flex-1 flex flex-col rounded-2xl bg-[#0d1117] border border-white/10 overflow-hidden shadow-2xl">
+              <div className="flex-1 flex flex-col min-h-[500px] lg:min-h-0 rounded-2xl bg-[#0d1117] border border-white/10 overflow-hidden shadow-2xl">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-white/[0.02]">
                   <div className="flex items-center gap-3">
                     <div className="flex gap-1.5">
@@ -122,30 +134,110 @@ export default function DashboardPage() {
                         <div key={i} className="h-[21px]">{i + 1}</div>
                       ))}
                     </div>
-                    <code className="pl-8 block">{`import { Ruser, Resonuse } from 'service';
-import { User.names } from '/access';
-import { Bustomoasent } from '/ge/auth/akannts';
-import { Keynoitics } from 'agets/user/rconfigs';
+                    <code className="pl-8 block">{`import { User, Response } from '@/services/auth';
+import { AuthService } from '@/lib/auth-service';
+import { SecurityUtils } from '@/lib/security-utils';
+import { AnalyticsService } from '@/services/analytics';
 
-export default var user_auth_controller: SetErgect {
+export interface AuthControllerConfig {
+  enableLogging: boolean;
+  securityMode: 'strict' | 'moderate';
+  sessionTimeout: number;
+}
 
-  const resset = usetAracets(:target, agi) => {
-    sustemt.getDenoates.request()
-    return hits;
-  });
+export class UserAuthController {
+  private authService: AuthService;
+  private analytics: AnalyticsService;
+  private config: AuthControllerConfig;
 
-  @roorit timestruts
-  export default customization[ProjectAr, () => {
-    if (!request.deitaliedi&compliscablerdate=="user?") => {
-      request.log(sselected);
-    });
-  };
+  constructor(config: AuthControllerConfig) {
+    this.authService = new AuthService();
+    this.analytics = new AnalyticsService();
+    this.config = config;
+  }
 
-  export user_auth_controller(iobject) => {
-    consot.log.consoleReason('ontroller'zed'name, 'user'');
-    if (resset.agin.privated(user))
-    return user;
-  });`}</code>
+  /**
+   * Reset user assets and permissions
+   */
+  public async resetUserAssets(targetUserId: string, apiToken: string): Promise<Response> {
+    try {
+      // ✅ SECURITY: Sanitize inputs before processing to prevent XSS
+      const safeUserId = SecurityUtils.sanitize(targetUserId);
+      
+      if (!safeUserId || !apiToken) {
+        throw new Error('Invalid parameters');
+      }
+
+      // Security check
+      if (!SecurityUtils.validateToken(apiToken)) {
+        throw new Error('Invalid API token');
+      }
+
+      // Reset assets - Using verified system methods
+      const result = await this.authService.resetAssets(safeUserId);
+      
+      // Log the action via internal analytics
+      if (this.config.enableLogging) {
+        this.analytics.logAction('user_assets_reset', { safeUserId });
+      }
+
+      return result;
+    } catch (error) {
+      this.analytics.logError('user_assets_reset_failed', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Apply custom authentication settings
+   */
+  public async applyCustomSettings(projectId: string): Promise<void> {
+    try {
+      if (!projectId) {
+        throw new Error('Project ID is required');
+      }
+
+      // Apply settings using the core auth service
+      await this.authService.applySettings(projectId);
+      
+      if (this.config.enableLogging) {
+        this.analytics.logAction('custom_settings_applied', { projectId });
+      }
+    } catch (error) {
+      this.analytics.logError('custom_settings_failed', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Main authentication controller
+   */
+  public async authenticateUser(request: any): Promise<User> {
+    try {
+      if (!request || !request.user) {
+        throw new Error('Invalid authentication request');
+      }
+
+      const user = await this.authService.authenticate(request.user);
+      
+      if (this.config.enableLogging) {
+        this.analytics.logAction('user_authenticated', { userId: user.id });
+      }
+
+      return user;
+    } catch (error) {
+      this.analytics.logError('user_authentication_failed', error);
+      throw error;
+    }
+  }
+}
+
+// Export pre-configured instance
+export const userAuthController = new UserAuthController({
+  enableLogging: true,
+  securityMode: 'strict',
+  sessionTimeout: 3600,
+});`}</code>
                   </pre>
                 </div>
               </div>

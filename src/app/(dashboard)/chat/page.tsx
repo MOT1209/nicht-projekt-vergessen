@@ -52,16 +52,6 @@ function ChatContent() {
     scrollToBottom();
   }, [messages]);
 
-  const handleInitialQuery = async (query: string) => {
-    handleSend(query);
-  };
-
-  useEffect(() => {
-    if (initialQuery && messages.length === 1) {
-      handleInitialQuery(initialQuery);
-    }
-  }, [initialQuery, handleInitialQuery]);
-
   const handleSend = async (overrideInput?: string) => {
     const messageText = overrideInput || input;
     if (!messageText.trim()) return;
@@ -113,6 +103,13 @@ function ChatContent() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (initialQuery && messages.length === 1) {
+      handleSend(initialQuery);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialQuery]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {

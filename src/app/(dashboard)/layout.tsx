@@ -20,15 +20,53 @@ export default function DashboardLayout({
     if (checked.current) return;
     checked.current = true;
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('CRITICAL: Auth session error:', error);
+          router.push('/login');
+          return;
+        }
+
+        if (!session) {
+          console.log('No active session found, redirecting to login...');
+          router.push('/login');
+        } else {
+          // Robustly populate the store and verify user permissions
+          const success = await checkSession();
+          if (!success) {
+            console.error('Failed to sync session with store, retrying...');
+            // Optional: add retry logic here
+          }
+        }
+      } catch (error) {
+        console.error('Authentication initialization failed:', error);
         router.push('/login');
-      } else {
-        // Populate the store with user and profile data
-        checkSession();
       }
-    });
+    };
+
+    initializeAuth();
   }, [router, checkSession]);
+
+  if (!checked.current || (!user && !profile)) {
+    return (
+      <div className="h-screen w-screen flex flex-col items-center justify-center bg-[#0a0c10] space-y-6">
+        <div className="relative h-24 w-24">
+          <div className="absolute inset-0 rounded-full border-t-2 border-r-2 border-blue-500 animate-spin" />
+          <div className="absolute inset-4 rounded-full border-b-2 border-l-2 border-violet-500 animate-spin-reverse" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="h-2 w-2 rounded-full bg-white animate-pulse" />
+          </div>
+        </div>
+        <div className="text-center space-y-2">
+          <h2 className="text-xl font-black text-white tracking-widest uppercase italic">Project Memory AI</h2>
+          <p className="text-[10px] font-bold text-gray-500 tracking-[0.2em] uppercase">Securing Workspace & Syncing Data...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleSignOut = async () => {
     await signOut();

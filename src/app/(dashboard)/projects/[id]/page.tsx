@@ -536,17 +536,21 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   ) : (
                     <div className="flex items-start justify-between">
                       <div
-                        className="flex-1 prose prose-sm max-w-none rtl text-right"
+                        className="flex-1 prose prose-sm max-w-none rtl text-right text-gray-200"
                         onClick={() => setEditingNote(note.id)}
-                        dangerouslySetInnerHTML={{ __html: note.content }}
+                        dangerouslySetInnerHTML={{ 
+                          __html: note.content 
+                            .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+                            .replace(/on\w+\s*=/gi, '')
+                        }}
                       />
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-400">
+                      <div className="flex items-center gap-3">
+                        <span className="text-[10px] font-bold text-gray-500 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
                           {formatRelativeTime(note.created_at)}
                         </span>
                         <button
                           onClick={() => deleteNote(note.id)}
-                          className="p-1 text-gray-400 hover:text-red-500"
+                          className="p-1.5 rounded-lg text-gray-500 hover:text-rose-400 hover:bg-rose-400/10 transition-all"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
