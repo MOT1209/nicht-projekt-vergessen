@@ -2,8 +2,9 @@
 
 import { createContext, useContext, useState, ReactNode } from 'react'
 
-type WorkspaceType = 'inspector' | 'studio'
+type WorkspaceType = 'inspector' | 'studio' | 'settings'
 type LanguageType = 'ar' | 'en'
+type ThemeType = 'dark' | 'light'
 
 export interface ProjectFile {
   id: string
@@ -20,21 +21,22 @@ interface WorkspaceState {
   activeStudioTab: string
   setActiveStudioTab: (t: string) => void
   
-  // New: Language Support
+  // Theme & Language
   lang: LanguageType
   setLang: (l: LanguageType) => void
+  theme: ThemeType
+  setTheme: (t: ThemeType) => void
   t: (key: string) => string
 
-  // New: Project Specific Files
+  // Project Specific Files
   files: ProjectFile[]
   setFiles: (files: ProjectFile[]) => void
   addFiles: (newFiles: ProjectFile[]) => void
   clearProject: () => void
   
-  credits: {
-    elevenlabs: number
-    gemini: number
-  }
+  // User Profile
+  user: any
+  setUser: (u: any) => void
 }
 
 const WorkspaceContext = createContext<WorkspaceState | undefined>(undefined)
@@ -44,6 +46,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [activeStudioTab, setActiveStudioTab] = useState('video')
   const [files, setFiles] = useState<ProjectFile[]>([])
   const [lang, setLang] = useState<LanguageType>('ar')
+  const [theme, setTheme] = useState<ThemeType>('dark')
+  const [user, setUser] = useState<any>(null)
 
   const credits = {
     elevenlabs: 50000,
@@ -63,6 +67,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     ar: {
       inspector: 'فاحص الكود',
       studio: 'استوديو المحتوى',
+      settings: 'الإعدادات',
       upload: 'رفع المشروع',
       clear: 'مسح المشروع',
       explorer: 'متصفح الملفات',
@@ -75,12 +80,14 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       factory: 'مصنع المحتوى',
       audio: 'مختبر الصوت',
       generate: 'توليد',
-      credits: 'الرصيد',
-      logout: 'خروج'
+      logout: 'خروج',
+      dark: 'الوضع الداكن',
+      light: 'الوضع الفاتح'
     },
     en: {
       inspector: 'Code Inspector',
       studio: 'Content Studio',
+      settings: 'Settings',
       upload: 'Upload Project',
       clear: 'Clear Project',
       explorer: 'Explorer',
@@ -93,8 +100,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       factory: 'Content Factory',
       audio: 'Audio Lab',
       generate: 'Generate',
-      credits: 'Credits',
-      logout: 'Logout'
+      logout: 'Logout',
+      dark: 'Dark Mode',
+      light: 'Light Mode'
     }
   }
 
@@ -108,14 +116,20 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       setActiveStudioTab,
       lang,
       setLang,
+      theme,
+      setTheme,
       t,
       files,
       setFiles,
       addFiles,
       clearProject,
-      credits 
+      user,
+      setUser
     }}>
-      <div dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <div 
+        dir={lang === 'ar' ? 'rtl' : 'ltr'} 
+        className={theme === 'dark' ? 'dark-theme' : 'light-theme'}
+      >
         {children}
       </div>
     </WorkspaceContext.Provider>

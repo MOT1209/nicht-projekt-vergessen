@@ -19,12 +19,22 @@ const ContentStudio = dynamic(
   }
 )
 
+const SettingsView = dynamic(
+  () => import('@/components/settings/SettingsView').then(mod => ({ default: mod.SettingsView })),
+  {
+    loading: () => <WorkspaceLoader label="Settings" color="slate" />,
+    ssr: false
+  }
+)
+
 export default function HomePage() {
   const { activeWorkspace } = useWorkspace()
 
   return (
     <div className="h-[calc(100vh-56px)] w-full overflow-hidden">
-      {activeWorkspace === 'inspector' ? <CodeInspector /> : <ContentStudio />}
+      {activeWorkspace === 'inspector' && <CodeInspector />}
+      {activeWorkspace === 'studio' && <ContentStudio />}
+      {activeWorkspace === 'settings' && <SettingsView />}
     </div>
   )
 }
