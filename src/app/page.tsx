@@ -22,7 +22,7 @@ const ContentStudio = dynamic(
 const SettingsView = dynamic(
   () => import('@/components/settings/SettingsView').then(mod => ({ default: mod.SettingsView })),
   {
-    loading: () => <WorkspaceLoader label="Settings" color="slate" />,
+    loading: () => <WorkspaceLoader label="Settings" color="purple" />,
     ssr: false
   }
 )
