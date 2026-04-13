@@ -2,30 +2,66 @@
 
 import { createContext, useContext, useState, ReactNode } from 'react'
 
-type Workspace = 'inspector' | 'studio'
-type StudioTab = 'video' | 'thumbnail' | 'content' | 'audio'
+type WorkspaceType = 'inspector' | 'studio'
 
-interface WorkspaceContextType {
-  activeWorkspace: Workspace
-  setActiveWorkspace: (w: Workspace) => void
-  activeStudioTab: StudioTab
-  setActiveStudioTab: (t: StudioTab) => void
-  credits: { elevenlabs: number; gemini: string }
+export interface ProjectFile {
+  id: string
+  name: string
+  path: string
+  content: string
+  type: 'file' | 'folder'
+  children?: ProjectFile[]
 }
 
-const WorkspaceContext = createContext<WorkspaceContextType | null>(null)
+interface WorkspaceState {
+  activeWorkspace: WorkspaceType
+  setActiveWorkspace: (w: WorkspaceType) => void
+  activeStudioTab: string
+  setActiveStudioTab: (t: string) => void
+  
+  // New: Project Specific Files
+  files: ProjectFile[]
+  setFiles: (files: ProjectFile[]) => void
+  addFiles: (newFiles: ProjectFile[]) => void
+  clearProject: () => void
+  
+  credits: {
+    elevenlabs: number
+    gemini: number
+  }
+}
+
+const WorkspaceContext = createContext<WorkspaceState | undefined>(undefined)
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
-  const [activeWorkspace, setActiveWorkspace] = useState<Workspace>('inspector')
-  const [activeStudioTab, setActiveStudioTab] = useState<StudioTab>('video')
+  const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceType>('inspector')
+  const [activeStudioTab, setActiveStudioTab] = useState('video')
+  const [files, setFiles] = useState<ProjectFile[]>([])
+
+  const credits = {
+    elevenlabs: 50000,
+    gemini: 350
+  }
+
+  const addFiles = (newFiles: ProjectFile[]) => {
+    setFiles(prev => [...prev, ...newFiles])
+  }
+
+  const clearProject = () => {
+    setFiles([])
+  }
 
   return (
-    <WorkspaceContext.Provider value={{
-      activeWorkspace,
-      setActiveWorkspace,
-      activeStudioTab,
+    <WorkspaceContext.Provider value={{ 
+      activeWorkspace, 
+      setActiveWorkspace, 
+      activeStudioTab, 
       setActiveStudioTab,
-      credits: { elevenlabs: 10000, gemini: 'Unlimited' }
+      files,
+      setFiles,
+      addFiles,
+      clearProject,
+      credits 
     }}>
       {children}
     </WorkspaceContext.Provider>

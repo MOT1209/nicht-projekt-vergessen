@@ -16,73 +16,48 @@ interface FileNode {
 
 const DEMO_TREE: FileNode[] = [
   {
-    name: 'my-project', type: 'folder', children: [
-      { name: 'next.config.ts', type: 'file', ext: 'ts', content: `import type { NextConfig } from 'next'\nconst nextConfig: NextConfig = { reactStrictMode: true }\nexport default nextConfig` },
-      { name: 'package.json', type: 'file', ext: 'json', content: `{\n  "name": "my-project",\n  "version": "1.0.0",\n  "scripts": {\n    "dev": "next dev",\n    "build": "next build"\n  }\n}` },
-      {
-        name: 'src', type: 'folder', children: [
-          { name: 'auth.js', type: 'file', ext: 'js', content: `// Auth controller\nconst jwt = require('jsonwebtoken')\nconst SECRET = "hardcoded-secret-123"\n\nfunction login(user, pass) {\n  if (user == "admin" && pass == "admin") {\n    const token = jwt.sign({ user }, SECRET)\n    return token\n  }\n  return null\n}\n\nmodule.exports = { login }` },
-          { name: 'api.ts', type: 'file', ext: 'ts', content: `// API handler\nexport async function fetchData(url: string) {\n  const res = await fetch(url)\n  const data = res.json()\n  return data\n}` },
-        ]
-      }
-    ]
-  }
-]
+import React from 'react'
+import { useWorkspace, ProjectFile } from '@/store/workspace-store'
+import { FolderPlus, FileText, FolderOpen, Trash2, Github } from 'lucide-react'
 
-function getFileIcon(ext?: string) {
-  switch (ext) {
-    case 'ts': case 'tsx': return <FileCode size={13} className="text-blue-400" />
-    case 'js': case 'jsx': return <FileCode size={13} className="text-yellow-400" />
-    case 'json': return <FileJson size={13} className="text-orange-400" />
-    case 'css': return <FileCog size={13} className="text-pink-400" />
-    default: return <File size={13} className="text-slate-400" />
-  }
-}
+export function FileTree({ onFileSelect, selectedFile }: { onFileSelect: (f: ProjectFile) => void, selectedFile: ProjectFile | null }) {
+  const { files, setFiles, clearProject } = useWorkspace()
 
-function TreeNode({ node, depth, onSelect, activeFile }: {
-  node: FileNode
-  depth: number
-  onSelect: (name: string, content: string) => void
-  activeFile: string
-}) {
-  const [open, setOpen] = useState(depth === 0)
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const uploadedFiles = e.target.files
+    if (!uploadedFiles) return
 
-  if (node.type === 'folder') {
-    return (
-      <div>
-        <div
-          onClick={() => setOpen(!open)}
-          className="flex items-center gap-1.5 py-1 px-2 rounded cursor-pointer hover:bg-white/5 text-slate-300 text-xs font-mono"
-          style={{ paddingLeft: `${8 + depth * 12}px` }}
-        >
-          {open ? <ChevronDown size={10} className="text-slate-500" /> : <ChevronRight size={10} className="text-slate-500" />}
-          {open ? <FolderOpen size={13} className="text-yellow-400/80" /> : <Folder size={13} className="text-yellow-400/60" />}
-          <span>{node.name}</span>
-        </div>
-        {open && node.children?.map((child, i) => (
-          <TreeNode key={i} node={child} depth={depth + 1} onSelect={onSelect} activeFile={activeFile} />
-        ))}
-      </div>
-    )
+    const newFiles: ProjectFile[] = []
+    
+    for (let i = 0; i < uploadedFiles.length; i++) {
+      const file = uploadedFiles[i]
+      const text = await file.text()
+      
+      newFiles.push({
+        id: Math.random().toString(36).substr(2, 9),
+        name: file.name,
+        path: file.webkitRelativePath || file.name,
+        content: text,
+        type: 'file'
+      })
+    }
+
+    setFiles(newFiles)
   }
 
-  const isActive = node.name === activeFile
   return (
-    <div
-      onClick={() => onSelect(node.name, node.content || '')}
-      className={`flex items-center gap-1.5 py-1 px-2 rounded cursor-pointer text-xs font-mono transition-colors
-        ${isActive ? 'bg-purple-500/20 text-purple-300' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'}`}
-      style={{ paddingLeft: `${8 + depth * 12}px` }}
-    >
-      <span className="w-2.5" />
-      {getFileIcon(node.ext)}
-      <span>{node.name}</span>
-    </div>
-  )
-}
-
-export function FileTree({ onFileSelect, activeFile }: {
-  onFileSelect: (name: string, content: string) => void
+    <div className="h-full flex flex-col bg-slate-950/20">
+      <div className="p-4 border-b border-white/5 flex items-center justify-between">
+        <h3 className="text-[10px] font-bold tracking-widest text-slate-500 uppercase">Filesystem</h3>
+        <div className="flex gap-1">
+           <button 
+            onClick={clearProject}
+            className="p-1.5 hover:bg-red-500/10 hover:text-red-400 text-slate-500 transition-colors rounded-lg"
+            title="Clear Project"
+          >
+            <Trash2 size={13} />
+          </button>
+        </div>
   activeFile: string
 }) {
   const [uploadedFiles, setUploadedFiles] = useState<FileNode[]>([])
