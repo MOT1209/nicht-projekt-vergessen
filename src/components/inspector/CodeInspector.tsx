@@ -6,18 +6,19 @@ import { CodeEditor } from './CodeEditor'
 import { AnalysisPanel } from './AnalysisPanel'
 import { Terminal } from './Terminal'
 import { AlKingAssistant } from './AlKingAssistant'
-import { ProjectFile } from '@/store/workspace-store'
+import { ProjectFile, useWorkspace } from '@/store/workspace-store'
 import { AuditReport } from '@/types/audit'
 import { BarChart3, Brain, Search } from 'lucide-react'
 
 export function CodeInspector() {
+  const { t, lang } = useWorkspace()
   const [selectedFile, setSelectedFile] = useState<ProjectFile | null>(null)
   const [auditReport, setAuditReport] = useState<AuditReport | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [rightTab, setRightTab] = useState<'audit' | 'agent'>('audit')
   const [logs, setLogs] = useState<string[]>([
-    '> AlKing Security Engine v2.0 initialized',
-    '> Awaiting project upload...',
+    lang === 'ar' ? '> تم تشغيل محرك AlKing Security v2.0' : '> AlKing Security Engine v2.0 initialized',
+    lang === 'ar' ? '> بانتظار رفع المشروع...' : '> Awaiting project upload...',
   ])
 
   const addLog = (msg: string) => setLogs(prev => [...prev, msg])
@@ -51,16 +52,16 @@ export function CodeInspector() {
     <div className="flex flex-col h-full overflow-hidden">
       {/* Controls bar */}
       <div className="h-11 border-b border-white/5 flex items-center justify-between px-4 bg-slate-900/30 shrink-0">
-        <div className="flex items-center gap-2 bg-slate-950/50 border border-white/5 rounded-lg px-3 py-1.5">
+        <div className="flex items-center gap-2 bg-slate-950/50 border border-white/5 rounded-lg px-3 py-1.5 focus-within:ring-1 focus-within:ring-purple-500/30 transition-all">
           <Search size={13} className="text-slate-600" />
           <input
             type="text"
-            placeholder="Search in project..."
+            placeholder={lang === 'ar' ? 'بحث في المشروع...' : 'Search in project...'}
             className="bg-transparent border-none outline-none text-[11px] w-44 text-slate-400 placeholder:text-slate-700"
           />
         </div>
-        <button className="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold text-slate-400 transition-all border border-white/5 tracking-widest">
-          EXPORT REPORT
+        <button className="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold text-slate-400 transition-all border border-white/5 tracking-widest uppercase">
+          {lang === 'ar' ? 'تصدير التقرير' : 'EXPORT REPORT'}
         </button>
       </div>
 
@@ -86,14 +87,14 @@ export function CodeInspector() {
               active={rightTab === 'audit'}
               onClick={() => setRightTab('audit')}
               icon={<BarChart3 size={12} />}
-              label="AUDIT"
+              label={t('audit')}
               color="purple"
             />
             <TabBtn
               active={rightTab === 'agent'}
               onClick={() => setRightTab('agent')}
               icon={<Brain size={12} />}
-              label="AI AGENT"
+              label={t('agent')}
               color="cyan"
             />
           </div>

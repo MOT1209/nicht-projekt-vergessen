@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
 
 export function TopNav() {
-  const { activeWorkspace, setActiveWorkspace, credits } = useWorkspace()
+  const { activeWorkspace, setActiveWorkspace, credits, lang, setLang, t } = useWorkspace()
   const router = useRouter()
   const supabase = createClient()
 
@@ -14,6 +14,10 @@ export function TopNav() {
     await supabase.auth.signOut()
     router.push('/login')
     router.refresh()
+  }
+
+  const toggleLang = () => {
+    setLang(lang === 'ar' ? 'en' : 'ar')
   }
 
   return (
@@ -30,40 +34,41 @@ export function TopNav() {
           </span>
         </div>
 
-        {/* Workspace Switcher — Center */}
-        <div className="flex items-center gap-1 bg-slate-900 border border-white/10 rounded-xl p-1">
-          <WorkspaceBtn
-            active={activeWorkspace === 'inspector'}
+        {/* Workspace Switcher */}
+        <div className="flex items-center bg-slate-900/50 p-1 rounded-xl border border-white/10 shrink-0">
+          <WorkspaceBtn 
+            active={activeWorkspace === 'inspector'} 
             onClick={() => setActiveWorkspace('inspector')}
-            icon={<Code2 size={14} />}
-            label="Code Inspector"
+            icon={<Code2 size={16} />} 
+            label={t('inspector')}
             accent="purple"
           />
-          <WorkspaceBtn
-            active={activeWorkspace === 'studio'}
+          <WorkspaceBtn 
+            active={activeWorkspace === 'studio'} 
             onClick={() => setActiveWorkspace('studio')}
-            icon={<Clapperboard size={14} />}
-            label="Content Studio"
+            icon={<Clapperboard size={16} />} 
+            label={t('studio')}
             accent="cyan"
           />
         </div>
 
-        {/* Credits + Avatar */}
-        <div className="flex items-center gap-3 min-w-[160px] justify-end">
-          <div className="hidden sm:flex items-center gap-2 text-xs text-slate-400">
-            <span className="flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              EL: {credits.elevenlabs.toLocaleString()}
-            </span>
-            <span className="text-slate-600">|</span>
-            <span className="flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
-              GM: {credits.gemini}
-            </span>
+        {/* Right Actions */}
+        <div className="flex items-center gap-4 min-w-[160px] justify-end">
+          <div className="hidden md:flex flex-col items-end mr-2">
+            <span className="text-[10px] text-slate-500 font-bold tracking-widest uppercase">{t('credits')}</span>
+            <span className="text-xs font-mono text-cyan-400">GM:{credits.gemini}</span>
           </div>
+
+          <button 
+            onClick={toggleLang}
+            className="px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[10px] font-bold text-slate-400 transition-all uppercase tracking-tighter"
+          >
+            {lang === 'ar' ? 'English' : 'العربية'}
+          </button>
+
           <button
             onClick={handleLogout}
-            title="Sign Out"
+            title={t('logout')}
             className="w-7 h-7 rounded-full bg-slate-800 hover:bg-red-500/20 hover:text-red-400 flex items-center justify-center text-slate-400 border border-white/10 transition-all"
           >
             <LogOut size={13} />

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useWorkspace } from '@/store/workspace-store'
 import { 
   Clapperboard, 
   Image as ImageIcon, 
@@ -14,54 +15,61 @@ import {
 
 type StudioTab = 'video' | 'thumbnail' | 'factory' | 'audio'
 
-export default function ContentStudio() {
+export function ContentStudio() {
+  const { t, lang } = useWorkspace()
   const [activeTab, setActiveTab] = useState<StudioTab>('video')
 
   return (
     <div className="flex h-full bg-slate-950/50 backdrop-blur-sm overflow-hidden">
       {/* Sidebar - Studio Sub-tabs */}
-      <div className="w-64 border-r border-white/5 bg-slate-900/30 p-4 flex flex-col gap-2">
+       <div className="w-64 border-r border-white/5 bg-slate-900/30 p-4 flex flex-col gap-2 shrink-0">
         <div className="px-3 mb-4">
-          <h2 className="text-xs font-bold tracking-widest text-slate-500 uppercase">Creative Suite</h2>
+          <h2 className="text-xs font-bold tracking-widest text-slate-500 uppercase">
+            {lang === 'ar' ? 'مجموعة الأدوات' : 'Creative Suite'}
+          </h2>
         </div>
         
         <StudioSidebarItem 
           active={activeTab === 'video'} 
           onClick={() => setActiveTab('video')} 
           icon={<Clapperboard size={18} />} 
-          label="Video Editor" 
-          description="AI Video Generation"
+          label={t('video')} 
+          description={lang === 'ar' ? 'توليد فيديو بالذكاء' : 'AI Video Generation'}
         />
         <StudioSidebarItem 
           active={activeTab === 'thumbnail'} 
           onClick={() => setActiveTab('thumbnail')} 
           icon={<ImageIcon size={18} />} 
-          label="Thumbnail Pro" 
-          description="Pollinations Engine"
+          label={t('thumbnail')} 
+          description={lang === 'ar' ? 'تصميم أغلفة احترافية' : 'Pollinations Engine'}
         />
         <StudioSidebarItem 
           active={activeTab === 'factory'} 
           onClick={() => setActiveTab('factory')} 
           icon={<FileText size={18} />} 
-          label="Content Factory" 
-          description="Script & Blog AI"
+          label={t('factory')} 
+          description={lang === 'ar' ? 'كتابة النصوص والمقالات' : 'Script & Blog AI'}
         />
         <StudioSidebarItem 
           active={activeTab === 'audio'} 
           onClick={() => setActiveTab('audio')} 
           icon={<Mic2 size={18} />} 
-          label="Audio Lab" 
-          description="ElevenLabs Voice"
+          label={t('audio')} 
+          description={lang === 'ar' ? 'تحويل النص إلى صوت' : 'ElevenLabs Voice'}
         />
 
         <div className="mt-auto p-4 rounded-2xl bg-gradient-to-br from-purple-500/10 to-cyan-500/10 border border-white/5">
           <div className="flex items-center gap-2 mb-2">
             <Sparkles size={14} className="text-purple-400" />
-            <span className="text-[10px] font-bold text-slate-300">UPGRADE PRO</span>
+            <span className="text-[10px] font-bold text-slate-300">
+              {lang === 'ar' ? 'ترقية العضوية' : 'UPGRADE PRO'}
+            </span>
           </div>
-          <p className="text-[10px] text-slate-500 mb-3">Unlock 4K Export and Custom Voice Training.</p>
-          <button className="w-full py-2 bg-white/5 hover:bg-white/10 text-[10px] font-bold rounded-lg transition-colors border border-white/10">
-            VIEW PLANS
+          <p className="text-[10px] text-slate-500 mb-3">
+            {lang === 'ar' ? 'افتح جودة 4K وتدريب الأصوات.' : 'Unlock 4K Export and Custom Voice Training.'}
+          </p>
+          <button className="w-full py-2 bg-white/5 hover:bg-white/10 text-[10px] font-bold rounded-lg transition-colors border border-white/10 uppercase">
+            {lang === 'ar' ? 'عرض الخطط' : 'VIEW PLANS'}
           </button>
         </div>
       </div>

@@ -12,7 +12,7 @@ const CodeInspector = dynamic(
 )
 
 const ContentStudio = dynamic(
-  () => import('@/components/studio/ContentStudio'),
+  () => import('@/components/studio/ContentStudio').then(mod => ({ default: mod.ContentStudio })),
   {
     loading: () => <WorkspaceLoader label="Content Studio" color="cyan" />,
     ssr: false
