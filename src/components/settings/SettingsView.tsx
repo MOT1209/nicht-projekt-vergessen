@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { useWorkspace } from '@/store/workspace-store'
-import { User, Shield, Bell, Zap, Palette, Globe, CreditCard } from 'lucide-react'
+import { User, Shield, Bell, Zap, Palette, Globe, CreditCard, Sun, Moon } from 'lucide-react'
 
 export function SettingsView() {
   const { lang, setLang, theme, setTheme, t, user } = useWorkspace()
