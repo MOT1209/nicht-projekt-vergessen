@@ -100,7 +100,7 @@ export function CodeInspector() {
 
           <div className="flex-1 overflow-hidden">
             {rightTab === 'audit'
-              ? <AnalysisPanel report={auditReport} />
+              ? <AnalysisPanel report={auditReport} loading={isLoading} error={null} />
               : <AlKingAssistant />
             }
           </div>
