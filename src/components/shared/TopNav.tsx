@@ -13,7 +13,7 @@ export function TopNav() {
         {/* Logo */}
         <div className="flex items-center gap-2 min-w-[160px]">
           <div className="w-8 h-8 rounded-lg overflow-hidden border border-white/10">
-            <img src="/icon.png" alt="AlKing Logo" className="w-full h-full object-cover" />
+            <img src="/logo-alking.png" alt="AlKing Logo" className="w-full h-full object-cover" />
           </div>
           <span className="font-bold text-sm tracking-widest bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
             ALKING
