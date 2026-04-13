@@ -1,43 +1,31 @@
-import type { Metadata, Viewport } from "next";
-import { ThemeProvider } from "@/components/theme-provider";
-import "./globals.css";
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import './globals.css'
+import { WorkspaceProvider } from '@/store/workspace-store'
+import { TopNav } from '@/components/shared/TopNav'
+
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: "Project Memory AI - Alking Dashboard",
-  description: "المنصة الذكية المتكاملة لإدارة المشاريع وتحليل الأكواد والإنتاج الإبداعي المعزز بالذكاء الاصطناعي.",
-  keywords: ["إدارة مشاريع", "ذكاء اصطناعي", "برمجة", "تحليل أكواد", "Next.js", "AI Assistant"],
-  authors: [{ name: "راشد Alking" }],
-  openGraph: {
-    title: "Project Memory AI - Alking Dashboard",
-    description: "استعد لمستقبل إدارة المشاريع مع أقوى منصة ذكية.",
-    type: "website",
-    locale: "ar_SA",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Project Memory AI - Alking Dashboard",
-    description: "منصة ذكية لإدارة المشاريع وتحليل الأكواد.",
-  },
-};
-
-export const viewport: Viewport = {
-  themeColor: "#0a0c10",
-  width: "device-width",
-  initialScale: 1,
-};
+  title: 'Alking Dashboard',
+  description: 'Elite Developer & Content Studio Platform',
+}
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <html lang="ar" dir="rtl" suppressHydrationWarning>
-      <body className="antialiased">
-        <ThemeProvider>
-          {children}
-        </ThemeProvider>
+    <html lang="en">
+      <body className={`${inter.className} bg-slate-950 text-slate-50 min-h-screen`}>
+        <WorkspaceProvider>
+          <TopNav />
+          <main className="pt-14">
+            {children}
+          </main>
+        </WorkspaceProvider>
       </body>
     </html>
-  );
+  )
 }
