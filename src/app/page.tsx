@@ -4,7 +4,7 @@ import { useWorkspace } from '@/store/workspace-store'
 import dynamic from 'next/dynamic'
 
 const CodeInspector = dynamic(
-  () => import('@/components/inspector/CodeInspector'),
+  () => import('@/components/inspector/CodeInspector').then(mod => ({ default: mod.CodeInspector })),
   {
     loading: () => <WorkspaceLoader label="Code Inspector" color="purple" />,
     ssr: false
