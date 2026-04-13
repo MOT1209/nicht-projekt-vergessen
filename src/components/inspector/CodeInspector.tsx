@@ -8,16 +8,25 @@ import { Terminal } from './Terminal'
 import { AlKingAssistant } from './AlKingAssistant'
 import { ProjectFile } from '@/store/workspace-store'
 import { AuditReport } from '@/types/audit'
-import { Search, Brain, BarChart3 } from 'lucide-react'
+import { BarChart3, Brain, Search } from 'lucide-react'
 
 export function CodeInspector() {
   const [selectedFile, setSelectedFile] = useState<ProjectFile | null>(null)
   const [auditReport, setAuditReport] = useState<AuditReport | null>(null)
-  const [logs, setLogs] = useState<string[]>(['> Initializing AlKing Security Engine...', '> Awaiting project upload...'])
+  const [isLoading, setIsLoading] = useState(false)
   const [rightTab, setRightTab] = useState<'audit' | 'agent'>('audit')
+  const [logs, setLogs] = useState<string[]>([
+    '> AlKing Security Engine v2.0 initialized',
+    '> Awaiting project upload...',
+  ])
+
+  const addLog = (msg: string) => setLogs(prev => [...prev, msg])
 
   const handleAudit = async (code: string, filename: string) => {
-    setLogs(prev => [...prev, `> Starting audit for ${filename}...`, '> Sending payload to Gemini 1.5 Flash...'])
+    setIsLoading(true)
+    addLog(`> Starting audit for: ${filename}`)
+    addLog('> Sending payload to Gemini 1.5 Flash...')
+
     try {
       const response = await fetch('/api/gemini/audit', {
         method: 'POST',
@@ -25,88 +34,100 @@ export function CodeInspector() {
         body: JSON.stringify({ code, filename }),
       })
       const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Audit failed')
       setAuditReport(data)
-      setLogs(prev => [...prev, `> Audit complete. Score: ${data.score}`, `> Found ${data.security.length} security issues.`])
+      addLog(`> SUCCESS: Score ${data.score}/100`)
+      addLog(`> Security issues found: ${data.security?.length ?? 0}`)
+      addLog(`> Performance issues: ${data.performance?.length ?? 0}`)
       setRightTab('audit')
-    } catch (err) {
-      setLogs(prev => [...prev, 'ERROR: Audit failed. Check API key.'])
+    } catch (err: any) {
+      addLog(`> ERROR: ${err.message}`)
+    } finally {
+      setIsLoading(false)
     }
   }
 
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-slate-950/20 backdrop-blur-3xl">
-      {/* Top Controls Bar */}
-      <div className="h-12 border-b border-white/5 flex items-center justify-between px-4 bg-slate-900/30">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 bg-slate-950/50 border border-white/5 rounded-lg px-2 py-1">
-            <Search size={14} className="text-slate-600" />
-            <input 
-              type="text" 
-              placeholder="Search in project..." 
-              className="bg-transparent border-none outline-none text-[10px] w-40 text-slate-400"
-            />
-          </div>
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Controls bar */}
+      <div className="h-11 border-b border-white/5 flex items-center justify-between px-4 bg-slate-900/30 shrink-0">
+        <div className="flex items-center gap-2 bg-slate-950/50 border border-white/5 rounded-lg px-3 py-1.5">
+          <Search size={13} className="text-slate-600" />
+          <input
+            type="text"
+            placeholder="Search in project..."
+            className="bg-transparent border-none outline-none text-[11px] w-44 text-slate-400 placeholder:text-slate-700"
+          />
         </div>
-        <div className="flex items-center gap-2">
-           <button className="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-bold text-slate-300 transition-all border border-white/10">
-            EXPORT REPORT
-          </button>
-        </div>
+        <button className="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold text-slate-400 transition-all border border-white/5 tracking-widest">
+          EXPORT REPORT
+        </button>
       </div>
 
       <div className="flex flex-1 overflow-hidden">
         {/* Left: File Tree */}
-        <div className="w-64 border-r border-white/5 flex flex-col">
-          <FileTree 
-            selectedFile={selectedFile} 
-            onFileSelect={setSelectedFile} 
-          />
+        <div className="w-60 border-r border-white/5 shrink-0 flex flex-col">
+          <FileTree selectedFile={selectedFile} onFileSelect={setSelectedFile} />
         </div>
 
         {/* Center: Editor + Terminal */}
-        <div className="flex-1 flex flex-col min-w-0 bg-slate-900/10">
-          <div className="flex-1 relative">
-            <CodeEditor 
-              file={selectedFile} 
-              onAudit={handleAudit} 
-            />
+        <div className="flex-1 flex flex-col min-w-0">
+          <div className="flex-1 overflow-hidden">
+            <CodeEditor file={selectedFile} onAudit={handleAudit} isLoading={isLoading} />
           </div>
           <Terminal logs={logs} onClear={() => setLogs([])} />
         </div>
 
-        {/* Right: Analysis & Assistant */}
-        <div className="w-80 border-l border-white/5 flex flex-col bg-slate-900/40">
-          {/* Tabs */}
-          <div className="flex border-b border-white/5 bg-slate-950/40 p-1 gap-1">
-            <button 
+        {/* Right: Audit / Agent */}
+        <div className="w-80 border-l border-white/5 shrink-0 flex flex-col bg-slate-900/20">
+          {/* Tab switcher */}
+          <div className="flex p-1 gap-1 border-b border-white/5 bg-slate-950/40">
+            <TabBtn
+              active={rightTab === 'audit'}
               onClick={() => setRightTab('audit')}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] font-bold tracking-widest transition-all
-                ${rightTab === 'audit' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20 shadow-lg shadow-purple-500/5' : 'text-slate-500 hover:text-slate-300'}
-              `}
-            >
-              <BarChart3 size={12} />
-              AUDIT
-            </button>
-            <button 
+              icon={<BarChart3 size={12} />}
+              label="AUDIT"
+              color="purple"
+            />
+            <TabBtn
+              active={rightTab === 'agent'}
               onClick={() => setRightTab('agent')}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] font-bold tracking-widest transition-all
-                ${rightTab === 'agent' ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shadow-lg shadow-cyan-500/5' : 'text-slate-500 hover:text-slate-300'}
-              `}
-            >
-              <Brain size={12} />
-              AI AGENT
-            </button>
+              icon={<Brain size={12} />}
+              label="AI AGENT"
+              color="cyan"
+            />
           </div>
 
           <div className="flex-1 overflow-hidden">
-            {rightTab === 'audit' ? (
-              <AnalysisPanel report={auditReport} />
-            ) : (
-              <AlKingAssistant />
-            )}
+            {rightTab === 'audit'
+              ? <AnalysisPanel report={auditReport} />
+              : <AlKingAssistant />
+            }
           </div>
         </div>
       </div>
     </div>
+  )
+}
+
+function TabBtn({ active, onClick, icon, label, color }: {
+  active: boolean
+  onClick: () => void
+  icon: React.ReactNode
+  label: string
+  color: 'purple' | 'cyan'
+}) {
+  const activeStyle = color === 'purple'
+    ? 'bg-purple-500/10 text-purple-400 border-purple-500/20'
+    : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
+
+  return (
+    <button
+      onClick={onClick}
+      className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[10px] font-bold tracking-widest transition-all border
+        ${active ? activeStyle : 'border-transparent text-slate-500 hover:text-slate-300'}`}
+    >
+      {icon} {label}
+    </button>
   )
 }

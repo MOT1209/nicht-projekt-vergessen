@@ -1,10 +1,20 @@
 'use client'
 
 import { useWorkspace } from '@/store/workspace-store'
-import { Code2, Clapperboard, Zap } from 'lucide-react'
+import { Code2, Clapperboard, Zap, LogOut } from 'lucide-react'
+import { createClient } from '@/lib/supabase-browser'
+import { useRouter } from 'next/navigation'
 
 export function TopNav() {
   const { activeWorkspace, setActiveWorkspace, credits } = useWorkspace()
+  const router = useRouter()
+  const supabase = createClient()
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push('/login')
+    router.refresh()
+  }
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 h-14 border-b border-white/10 backdrop-blur-xl bg-slate-950/80">
@@ -51,9 +61,13 @@ export function TopNav() {
               GM: {credits.gemini}
             </span>
           </div>
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-600 to-cyan-600 flex items-center justify-center text-xs font-bold text-white border border-white/20">
-            A
-          </div>
+          <button
+            onClick={handleLogout}
+            title="Sign Out"
+            className="w-7 h-7 rounded-full bg-slate-800 hover:bg-red-500/20 hover:text-red-400 flex items-center justify-center text-slate-400 border border-white/10 transition-all"
+          >
+            <LogOut size={13} />
+          </button>
         </div>
 
       </div>
