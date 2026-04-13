@@ -70,7 +70,10 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       onRehydrateStorage: () => (state) => {
         // Handle rehydration
         if (state?.user) {
-          state.user = securityUtils.sanitizeInput(state.user.email || '');
+          state.user = {
+            ...state.user,
+            email: securityUtils.sanitizeInput(state.user.email || '')
+          };
         }
       },
     }
