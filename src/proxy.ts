@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -27,16 +27,16 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
   const isAuthPage = pathname === '/login' || pathname === '/register'
-  const isPublicApi = pathname.startsWith('/auth/')
+  const isPublic = pathname.startsWith('/auth/') || pathname.startsWith('/_next') || pathname.startsWith('/api/')
 
-  // If not logged in and trying to access protected route → redirect to login
-  if (!user && !isAuthPage && !isPublicApi) {
+  // Not logged in → redirect to login
+  if (!user && !isAuthPage && !isPublic) {
     const loginUrl = request.nextUrl.clone()
     loginUrl.pathname = '/login'
     return NextResponse.redirect(loginUrl)
   }
 
-  // If logged in and visiting auth pages → redirect to dashboard
+  // Logged in + visiting auth page → redirect to dashboard
   if (user && isAuthPage) {
     const homeUrl = request.nextUrl.clone()
     homeUrl.pathname = '/'

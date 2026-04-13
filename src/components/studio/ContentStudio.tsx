@@ -9,8 +9,7 @@ import {
   Sparkles,
   Play,
   Download,
-  MagicWand,
-  Type
+  Wand2
 } from 'lucide-react'
 
 type StudioTab = 'video' | 'thumbnail' | 'factory' | 'audio'
@@ -186,7 +185,7 @@ function ThumbnailView() {
             disabled={loading}
             className="px-8 bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-700 text-slate-950 font-bold rounded-2xl transition-all flex items-center gap-2"
           >
-            {loading ? <div className="w-5 h-5 border-2 border-slate-950/20 border-t-slate-950 animate-spin rounded-full" /> : <MagicWand size={18} />}
+            {loading ? <div className="w-5 h-5 border-2 border-slate-950/20 border-t-slate-950 animate-spin rounded-full" /> : <Wand2 size={18} />}
             Generate
           </button>
         </div>
