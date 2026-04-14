@@ -66,7 +66,7 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 mb-6">
             <span className="text-2xl font-black tracking-[0.2em] bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent uppercase">
-              ALKING
+              ALKING 2.0
             </span>
             <div className="w-10 h-10 rounded-xl overflow-hidden border border-white/10 shadow-lg shadow-purple-500/10">
               <img src="/logo-alking.png" alt="AlKing" className="w-full h-full object-cover" />
