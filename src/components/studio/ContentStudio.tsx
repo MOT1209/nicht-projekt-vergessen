@@ -694,10 +694,12 @@ function AudioLabView() {
   const [text, setText] = useState('')
   const [audioUrl, setAudioUrl] = useState('')
   const [loading, setLoading] = useState(false)
-  const [voiceId, setVoiceId] = useState('pNInz6obbfDQGcgMyIGD') // Adam
+  const [voiceId, setVoiceId] = useState('pNInz6obbfDQGcgMyIGD')
   const [stability, setStability] = useState(0.5)
   const [similarity, setSimilarity] = useState(0.75)
-  const [history, setHistory] = useState<{url: string, text: string, voiceName: string, timestamp: number}[]>([])
+  const [useOpenRouterTTS, setUseOpenRouterTTS] = useState(false)
+  const [selectedOpenRouterVoice, setSelectedOpenRouterVoice] = useState('arabic')
+  const [history, setHistory] = useState<{url: string, text: string, voiceName: string, timestamp: number, provider: string}[]>([])
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const previousAudioRef = useRef<string>('')
 
@@ -719,16 +721,34 @@ function AudioLabView() {
     previousAudioRef.current = audioUrl
   }, [audioUrl])
 
-  const voices = [
+  const elevenVoices = [
     { id: 'pNInz6obbfDQGcgMyIGD', icon: '👨🏻‍🦳', labelEn: 'Adam', descEn: 'Deep Narrative', labelAr: 'آدم', descAr: 'صوت وثائقي عميق', color: 'from-amber-500/20' },
     { id: 'EXAVITQu4vr4xnSDxMaL', icon: '👩🏻', labelEn: 'Sarah', descEn: 'Soft Female', labelAr: 'سارة', descAr: 'سرد قصصي ناعم', color: 'from-pink-500/20' },
     { id: '2EiwWnXFnvU5JabPnv8n', icon: '👨🏻', labelEn: 'Tarik', descEn: 'News & Formal', labelAr: 'طارق', descAr: 'إخباري ورسمي', color: 'from-blue-500/20' },
     { id: 'ErXwobaYiN019PkySvjV', icon: '🧔🏻', labelEn: 'Antoni', descEn: 'Dramatic Focus', labelAr: 'أنتوني', descAr: 'درامي وحماسي', color: 'from-purple-500/20' }
   ]
 
+  const openRouterVoices = [
+    { id: 'arabic', icon: '🕌', labelEn: 'Arabic', descEn: 'Arabic TTS', labelAr: 'عربي', descAr: 'تحويل نص لعربي', color: 'from-green-500/20' },
+    { id: 'english', icon: '🇬🇧', labelEn: 'English', descEn: 'English TTS', labelAr: 'إنجليزي', descAr: 'تحويل نص لإنجليزي', color: 'from-blue-500/20' },
+    { id: 'male', icon: '👨', labelEn: 'Male', descEn: 'Male Voice', labelAr: 'ذكر', descAr: 'صوت ذكر', color: 'from-cyan-500/20' },
+    { id: 'female', icon: '👩', labelEn: 'Female', descEn: 'Female Voice', labelAr: 'أنثى', descAr: 'صوت أنثى', color: 'from-pink-500/20' }
+  ]
+
+  const voices = useOpenRouterTTS ? openRouterVoices : elevenVoices
+
   const getVoiceName = (id: string) => {
-    const v = voices.find(v => v.id === id)
+    const currentVoices = useOpenRouterTTS ? openRouterVoices : elevenVoices
+    const v = currentVoices.find(v => v.id === id)
     return v ? (lang === 'ar' ? v.labelAr : v.labelEn) : 'Voice'
+  }
+
+  const handleVoiceChange = (id: string) => {
+    if (useOpenRouterTTS) {
+      setSelectedOpenRouterVoice(id)
+    } else {
+      setVoiceId(id)
+    }
   }
 
   const generateAudio = async () => {
@@ -736,10 +756,15 @@ function AudioLabView() {
     setLoading(true)
     setAudioUrl('')
     try {
-      const resp = await fetch('/api/audio/generate', {
+      const endpoint = useOpenRouterTTS ? '/api/tts' : '/api/audio/generate'
+      const payload = useOpenRouterTTS 
+        ? { text, voice: selectedOpenRouterVoice }
+        : { text, voiceId, stability, similarity }
+      
+      const resp = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, voiceId, stability, similarity })
+        body: JSON.stringify(payload)
       })
       
       if (!resp.ok) {
@@ -758,8 +783,18 @@ function AudioLabView() {
       
       const blob = await resp.blob()
       const url = URL.createObjectURL(blob)
+      const voiceName = useOpenRouterTTS 
+        ? openRouterVoices.find(v => v.id === selectedOpenRouterVoice)?.labelAr || 'OpenRouter'
+        : elevenVoices.find(v => v.id === voiceId)?.labelAr || 'Voice'
+      
       setAudioUrl(url)
-      setHistory(prev => [{ url, text: text.substring(0, 50) + '...', voiceName: getVoiceName(voiceId), timestamp: Date.now() }, ...prev].slice(0, 10))
+      setHistory(prev => [{ 
+        url, 
+        text: text.substring(0, 50) + '...', 
+        voiceName, 
+        timestamp: Date.now(),
+        provider: useOpenRouterTTS ? 'OpenRouter' : 'ElevenLabs'
+      }, ...prev].slice(0, 10))
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
       alert((lang === 'ar' ? 'خطأ في التوليد: ' : 'Error: ') + errorMessage)
@@ -790,21 +825,37 @@ function AudioLabView() {
               {t('voice_talent')}
             </h3>
             
+            {/* Provider Toggle */}
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <button 
+                onClick={() => { setUseOpenRouterTTS(false); setVoiceId('pNInz6obbfDQGcgMyIGD'); }}
+                className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${!useOpenRouterTTS ? 'bg-purple-500/20 border-purple-400 text-purple-400' : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/5 text-slate-500'}`}
+              >
+                ElevenLabs
+              </button>
+              <button 
+                onClick={() => { setUseOpenRouterTTS(true); setSelectedOpenRouterVoice('arabic'); }}
+                className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${useOpenRouterTTS ? 'bg-purple-500/20 border-purple-400 text-purple-400' : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/5 text-slate-500'}`}
+              >
+                OpenRouter (مجانا)
+              </button>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               {voices.map(v => (
                 <button 
                   key={v.id}
-                  onClick={() => setVoiceId(v.id)}
+                  onClick={() => handleVoiceChange(v.id)}
                   className={`relative p-4 rounded-3xl transition-all duration-500 overflow-hidden text-left flex flex-col gap-2 items-center text-center
-                    ${voiceId === v.id 
+                    ${(useOpenRouterTTS ? selectedOpenRouterVoice : voiceId) === v.id 
                       ? 'bg-black/5 dark:bg-white/10 shadow-[0_0_30px_-5px_rgba(255,255,255,0.1)] scale-105 z-10' 
                       : 'bg-white/[0.02] hover:bg-white/[0.05] grayscale-[50%] hover:grayscale-0'
                     }`}
                 >
-                  {voiceId === v.id && (
+                  {(useOpenRouterTTS ? selectedOpenRouterVoice : voiceId) === v.id && (
                     <div className={`absolute inset-0 bg-gradient-to-br ${v.color} opacity-40`} />
                   )}
-                  {voiceId === v.id && (
+                  {(useOpenRouterTTS ? selectedOpenRouterVoice : voiceId) === v.id && (
                     <div className="absolute inset-0 ring-1 ring-inset ring-white/20 rounded-3xl" />
                   )}
                   <span className="text-3xl relative z-10 drop-shadow-lg">{v.icon}</span>
