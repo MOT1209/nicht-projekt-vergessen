@@ -694,11 +694,11 @@ function AudioLabView() {
   const [text, setText] = useState('')
   const [audioUrl, setAudioUrl] = useState('')
   const [loading, setLoading] = useState(false)
-  const [voiceId, setVoiceId] = useState('pNInz6obbfDQGcgMyIGD')
+  const [voiceId, setVoiceId] = useState('pNInz6obbfDQGcgMyIGD') // ElevenLabs voice
   const [stability, setStability] = useState(0.5)
   const [similarity, setSimilarity] = useState(0.75)
   const [useOpenRouterTTS, setUseOpenRouterTTS] = useState(false)
-  const [selectedOpenRouterVoice, setSelectedOpenRouterVoice] = useState('arabic')
+  const [openRouterVoice, setOpenRouterVoice] = useState('arabic') // OpenRouter TTS voice
   const [history, setHistory] = useState<{url: string, text: string, voiceName: string, timestamp: number, provider: string}[]>([])
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const previousAudioRef = useRef<string>('')
@@ -721,7 +721,7 @@ function AudioLabView() {
     previousAudioRef.current = audioUrl
   }, [audioUrl])
 
-  const elevenVoices = [
+    const elevenVoices = [
     { id: 'pNInz6obbfDQGcgMyIGD', icon: '👨🏻‍🦳', labelEn: 'Adam', descEn: 'Deep Narrative', labelAr: 'آدم', descAr: 'صوت وثائقي عميق', color: 'from-amber-500/20' },
     { id: 'EXAVITQu4vr4xnSDxMaL', icon: '👩🏻', labelEn: 'Sarah', descEn: 'Soft Female', labelAr: 'سارة', descAr: 'سرد قصصي ناعم', color: 'from-pink-500/20' },
     { id: '2EiwWnXFnvU5JabPnv8n', icon: '👨🏻', labelEn: 'Tarik', descEn: 'News & Formal', labelAr: 'طارق', descAr: 'إخباري ورسمي', color: 'from-blue-500/20' },
@@ -745,7 +745,7 @@ function AudioLabView() {
 
   const handleVoiceChange = (id: string) => {
     if (useOpenRouterTTS) {
-      setSelectedOpenRouterVoice(id)
+      setOpenRouterVoice(id)
     } else {
       setVoiceId(id)
     }
@@ -756,9 +756,9 @@ function AudioLabView() {
     setLoading(true)
     setAudioUrl('')
     try {
-      const endpoint = useOpenRouterTTS ? '/api/tts' : '/api/audio/generate'
+      const endpoint = useOpenRouterTTS ? '/api/openrouter' : '/api/audio/generate'
       const payload = useOpenRouterTTS 
-        ? { text, voice: selectedOpenRouterVoice }
+        ? { prompt: text, type: 'tts', voice: openRouterVoice }
         : { text, voiceId, stability, similarity }
       
       const resp = await fetch(endpoint, {
@@ -784,7 +784,7 @@ function AudioLabView() {
       const blob = await resp.blob()
       const url = URL.createObjectURL(blob)
       const voiceName = useOpenRouterTTS 
-        ? openRouterVoices.find(v => v.id === selectedOpenRouterVoice)?.labelAr || 'OpenRouter'
+        ? openRouterVoices.find(v => v.id === openRouterVoice)?.labelAr || 'OpenRouter'
         : elevenVoices.find(v => v.id === voiceId)?.labelAr || 'Voice'
       
       setAudioUrl(url)
@@ -827,18 +827,44 @@ function AudioLabView() {
             
             {/* Provider Toggle */}
             <div className="flex items-center justify-center gap-2 mb-4">
-              <button 
-                onClick={() => { setUseOpenRouterTTS(false); setVoiceId('pNInz6obbfDQGcgMyIGD'); }}
-                className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${!useOpenRouterTTS ? 'bg-purple-500/20 border-purple-400 text-purple-400' : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/5 text-slate-500'}`}
-              >
-                ElevenLabs
-              </button>
-              <button 
-                onClick={() => { setUseOpenRouterTTS(true); setSelectedOpenRouterVoice('arabic'); }}
-                className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${useOpenRouterTTS ? 'bg-purple-500/20 border-purple-400 text-purple-400' : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/5 text-slate-500'}`}
-              >
-                OpenRouter (مجانا)
-              </button>
+                <button 
+                  onClick={() => { setUseOpenRouterTTS(false); setVoiceId('pNInz6obbfDQGcgMyIGD'); }}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${!useOpenRouterTTS ? 'bg-purple-500/20 border-purple-400 text-purple-400' : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/5 text-slate-500'}`}
+                >
+                  ElevenLabs
+                </button>
+                <button 
+                  onClick={() => { setUseOpenRouterTTS(true); setOpenRouterVoice('arabic'); }}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${useOpenRouterTTS ? 'bg-purple-500/20 border-purple-400 text-purple-400' : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/5 text-slate-500'}`}
+                >
+                  OpenRouter (مجانا)
+                </button>
+              </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              {voices.map(v => (
+                <button 
+                  key={v.id}
+                  onClick={() => handleVoiceChange(v.id)}
+                  className={`relative p-4 rounded-3xl transition-all duration-500 overflow-hidden text-left flex flex-col gap-2 items-center text-center
+                    ${(useOpenRouterTTS ? openRouterVoice : voiceId) === v.id 
+                      ? 'bg-black/5 dark:bg-white/10 shadow-[0_0_30px_-5px_rgba(255,255,255,0.1)] scale-105 z-10' 
+                      : 'bg-white/[0.02] hover:bg-white/[0.05] grayscale-[50%] hover:grayscale-0'
+                    }`}
+                >
+                  {(useOpenRouterTTS ? openRouterVoice : voiceId) === v.id && (
+                    <div className={`absolute inset-0 bg-gradient-to-br ${v.color} opacity-40`} />
+                  )}
+                  {(useOpenRouterTTS ? openRouterVoice : voiceId) === v.id && (
+                    <div className="absolute inset-0 ring-1 ring-inset ring-white/20 rounded-3xl" />
+                  )}
+                  <span className="text-3xl relative z-10 drop-shadow-lg">{v.icon}</span>
+                  <div className="relative z-10">
+                    <div className="text-[11px] font-black text-slate-800 dark:text-slate-200">{lang === 'ar' ? v.labelAr : v.labelEn}</div>
+                    <div className="text-[9px] text-slate-600 dark:text-slate-400 mt-1">{lang === 'ar' ? v.descAr : v.descEn}</div>
+                  </div>
+                </button>
+              ))}
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -847,15 +873,15 @@ function AudioLabView() {
                   key={v.id}
                   onClick={() => handleVoiceChange(v.id)}
                   className={`relative p-4 rounded-3xl transition-all duration-500 overflow-hidden text-left flex flex-col gap-2 items-center text-center
-                    ${(useOpenRouterTTS ? selectedOpenRouterVoice : voiceId) === v.id 
+                    ${(useOpenRouterTTS ? openRouterVoice : voiceId) === v.id 
                       ? 'bg-black/5 dark:bg-white/10 shadow-[0_0_30px_-5px_rgba(255,255,255,0.1)] scale-105 z-10' 
                       : 'bg-white/[0.02] hover:bg-white/[0.05] grayscale-[50%] hover:grayscale-0'
                     }`}
                 >
-                  {(useOpenRouterTTS ? selectedOpenRouterVoice : voiceId) === v.id && (
+                  {(useOpenRouterTTS ? openRouterVoice : voiceId) === v.id && (
                     <div className={`absolute inset-0 bg-gradient-to-br ${v.color} opacity-40`} />
                   )}
-                  {(useOpenRouterTTS ? selectedOpenRouterVoice : voiceId) === v.id && (
+                  {(useOpenRouterTTS ? openRouterVoice : voiceId) === v.id && (
                     <div className="absolute inset-0 ring-1 ring-inset ring-white/20 rounded-3xl" />
                   )}
                   <span className="text-3xl relative z-10 drop-shadow-lg">{v.icon}</span>

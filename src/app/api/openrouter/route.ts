@@ -74,8 +74,25 @@ export async function POST(req: NextRequest) {
         }
         break
       
+      case 'tts':
+        const { voice = 'arabic' } = await req.json()
+        const voiceSettings: Record<string, string> = {
+          'arabic': 'arabic',
+          'english': 'english',
+          'male': 'male_speaker',
+          'female': 'female_speaker',
+        }
+        endpoint = 'https://openrouter.ai/api/v1/audio/speech'
+        requestBody = {
+          model: 'suno/bark',
+          input: prompt,
+          voice: voiceSettings[voice] || 'arabic',
+          response_format: 'mp3'
+        }
+        break
+
       default:
-        return NextResponse.json({ error: 'Unsupported type. Use "chat", "image", or "video"' }, { status: 400 })
+        return NextResponse.json({ error: 'Unsupported type. Use "chat", "image", "video", or "tts"' }, { status: 400 })
     }
 
     const response = await fetch(endpoint, {
@@ -120,6 +137,13 @@ export async function POST(req: NextRequest) {
         model: data.model,
         status: data.status
       })
+    } else if (type === 'tts') {
+        const audioBuffer = await response.arrayBuffer()
+        return new NextResponse(audioBuffer, {
+            headers: {
+                'Content-Type': 'audio/mpeg',
+            },
+        })
     }
 
   } catch (error: any) {
@@ -143,9 +167,18 @@ export async function GET() {
       ],
       video: [
         { id: 'runway-gen-2', name: 'Runway Gen-2', description: 'توليد فيديو عالي الجودة' }
+      ],
+      tts: [
+        { id: 'suno/bark', name: 'Bark', description: 'نص لكلام عالي الجودة - مجاني!' }
       ]
     },
-    supported_types: ['chat', 'image', 'video'],
+    voices: [
+      { id: 'arabic', name: 'Arabic', description: 'صوت عربي' },
+      { id: 'english', name: 'English', description: 'صوت إنجليزي' },
+      { id: 'male', name: 'Male', description: 'صوت ذكر' },
+      { id: 'female', name: 'Female', description: 'صوت أنثى' }
+    ],
+    supported_types: ['chat', 'image', 'video', 'tts'],
     status: 'ready'
   })
 }
