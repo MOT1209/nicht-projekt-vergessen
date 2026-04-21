@@ -29,6 +29,11 @@ export async function proxy(request: NextRequest) {
   const isAuthPage = pathname === '/login' || pathname === '/register'
   const isPublic = pathname.startsWith('/auth/') || pathname.startsWith('/_next') || pathname.startsWith('/api/')
 
+  // Dev mode bypass
+  if (process.env.NODE_ENV === 'development') {
+    return supabaseResponse
+  }
+
   // Not logged in → redirect to login
   if (!user && !isAuthPage && !isPublic) {
     const loginUrl = request.nextUrl.clone()

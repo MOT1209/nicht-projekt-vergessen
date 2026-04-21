@@ -31,13 +31,18 @@ export function TopNav() {
       <div className="flex items-center justify-between h-full px-4 max-w-[1800px] mx-auto">
 
         {/* Left: Logo */}
-        <div className="flex items-center gap-3 min-w-[180px]">
-          <div className="w-8 h-8 rounded-lg overflow-hidden border border-white/10 shadow-lg shadow-purple-500/10">
+        <div className="flex items-center gap-3 min-w-[200px]">
+          <div className="w-8 h-8 rounded-lg overflow-hidden border border-white/10 shadow-lg shadow-purple-500/10 shrink-0">
             <img src="/logo-alking.png" alt="AlKing" className="w-full h-full object-cover" />
           </div>
-          <span className="font-black text-[15px] tracking-[0.2em] bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent uppercase">
-            ALKING
-          </span>
+          <div className="flex flex-col">
+            <span className="font-black text-[15px] leading-tight tracking-[0.2em] bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent uppercase">
+              ALKING 2.0
+            </span>
+            {process.env.NODE_ENV === 'development' && (
+              <span className="text-[10px] font-black text-green-400 tracking-widest uppercase mt-1 animate-pulse">V3 - LATEST</span>
+            )}
+          </div>
         </div>
 
         {/* Center: Main Switcher */}

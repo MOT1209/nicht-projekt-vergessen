@@ -1,6 +1,26 @@
 import { NextResponse } from 'next/server';
+import { checkRateLimit, getClientIdentifier } from '@/lib/rate-limit';
 
 export async function POST(request: Request) {
+  const clientId = getClientIdentifier(request)
+  const { allowed, remaining, resetTime } = checkRateLimit(clientId, {
+    windowMs: 60 * 1000,
+    maxRequests: 10,
+  })
+
+  if (!allowed) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      {
+        status: 429,
+        headers: {
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': Math.ceil(resetTime / 1000).toString(),
+        },
+      }
+    )
+  }
+
   try {
     const body = await request.json();
     const { message, projects, tasks, notes } = body;

@@ -2,6 +2,49 @@ export type ProjectStatus = 'ACTIVE' | 'PAUSED' | 'COMPLETED';
 export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE';
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH';
 
+// Studio Types
+export type StudioTab = 'video' | 'thumbnail' | 'factory' | 'audio';
+
+export interface AudioSettings {
+  voiceId: string;
+  stability: number;
+  similarity: number;
+}
+
+export interface AudioHistoryItem {
+  url: string;
+  text: string;
+  voiceName: string;
+  timestamp: number;
+  duration?: number;
+}
+
+export interface GeneratedAsset {
+  id: string;
+  type: 'video' | 'thumbnail' | 'audio' | 'text';
+  url?: string;
+  content?: string;
+  prompt: string;
+  createdAt: number;
+  metadata?: Record<string, unknown>;
+}
+
+export interface VideoLayer {
+  id: string;
+  type: 'video' | 'audio' | 'text' | 'image';
+  label: string;
+  active: boolean;
+  duration?: number;
+  startTime?: number;
+  endTime?: number;
+}
+
+export interface VideoTimeline {
+  duration: number;
+  currentTime: number;
+  layers: VideoLayer[];
+}
+
 export interface Profile {
   id: string;
   full_name?: string;
