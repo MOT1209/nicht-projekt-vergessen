@@ -49,12 +49,21 @@ export async function POST(req: NextRequest) {
       })
     })
 
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      console.error('Gemini API error:', errorData)
+      return NextResponse.json({ 
+        error: errorData.error?.message || `Gemini API error: ${response.status}` 
+      }, { status: response.status })
+    }
+
     const data = await response.json()
     const content = data.candidates?.[0]?.content?.parts?.[0]?.text
 
     return NextResponse.json({ content })
 
   } catch (error: any) {
+    console.error('Gemini generate error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
