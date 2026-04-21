@@ -553,8 +553,9 @@ function FactoryView() {
   const [topic, setTopic] = useState('')
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(false)
+  const [useOpenRouter, setUseOpenRouter] = useState(false)
 
-  const generateContent = async (type: string): Promise<void> => {
+  const generateContent = async (type: string, provider?: boolean): Promise<void> => {
     if (!topic) {
       alert(lang === 'ar' ? 'الرجاء إدخال الموضوع أولاً' : 'Please enter a topic first');
       return;
@@ -562,18 +563,29 @@ function FactoryView() {
     setLoading(true);
     setContent('');
     try {
-      const resp = await fetch('/api/gemini/generate', {
+      const resp = await fetch(useOpenRouter ? '/api/openrouter' : '/api/gemini/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: topic, type })
+        body: JSON.stringify({ 
+          prompt: topic, 
+          type,
+          model: useOpenRouter ? 'gemma-4-27b-at' : undefined
+        })
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || 'Failed to generate');
       setContent(data.content);
-      addToHistory({ type: 'text', prompt: topic, content: data.content, contentType: type })
+      addToHistory({ 
+        type: 'text', 
+        prompt: topic, 
+        content: data.content, 
+        contentType: type,
+        status: useOpenRouter ? 'openrouter' : 'gemini'
+      })
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-      setContent(lang === 'ar' ? `حدث خطأ: ${errorMessage}\nتأكد من إعداد مفتاح Gemini API في .env.local` : `Error: ${errorMessage}\nCheck Gemini API Key config.`);
+      const provider = useOpenRouter ? 'OpenRouter' : 'Gemini';
+      setContent(lang === 'ar' ? `حدث خطأ مع ${provider}: ${errorMessage}` : `Error with ${provider}: ${errorMessage}`);
       console.error(e);
     } finally {
       setLoading(false);
@@ -593,13 +605,28 @@ function FactoryView() {
           />
         </div>
 
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <button 
+            onClick={() => setUseOpenRouter(false)}
+            className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${!useOpenRouter ? 'bg-purple-500/20 border-purple-400 text-purple-400' : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/5 text-slate-500 hover:text-slate-700 dark:text-slate-300'}`}
+          >
+            Gemini
+          </button>
+          <button 
+            onClick={() => setUseOpenRouter(true)}
+            className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${useOpenRouter ? 'bg-purple-500/20 border-purple-400 text-purple-400' : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/5 text-slate-500 hover:text-slate-700 dark:text-slate-300'}`}
+          >
+            OpenRouter (Gemma 4B)
+          </button>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <FactoryCard 
             title={t('video_script')}
             icon={<Play size={20} />}
             color="from-red-500/20"
             desc={t('video_script_desc')}
-            onClick={() => generateContent('script')}
+            onClick={() => generateContent('script', useOpenRouter)}
             loading={loading}
           />
           <FactoryCard 
@@ -607,7 +634,7 @@ function FactoryView() {
             icon={<FileText size={20} />}
             color="from-blue-500/20"
             desc={t('seo_blog_desc')}
-            onClick={() => generateContent('blog')}
+            onClick={() => generateContent('blog', useOpenRouter)}
             loading={loading}
           />
           <FactoryCard 
@@ -615,7 +642,7 @@ function FactoryView() {
             icon={<Sparkles size={20} />}
             color="from-amber-500/20"
             desc={t('viral_ideas_desc')}
-            onClick={() => generateContent('ideas')}
+            onClick={() => generateContent('ideas', useOpenRouter)}
             loading={loading}
           />
         </div>

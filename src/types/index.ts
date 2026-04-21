@@ -105,3 +105,39 @@ export interface Activity {
   metadata?: Record<string, unknown>;
   created_at: string;
 }
+
+// OpenRouter Types
+export type OpenRouterType = 'chat' | 'image' | 'video';
+export type OpenRouterModel = 
+  | 'gemma-4-27b-at'
+  | 'gemma-4-27b'
+  | 'claude-3.5-sonnet'
+  | 'gpt-4o'
+  | 'stabilityai/sd-xl'
+  | 'runway-gen-2';
+
+export interface OpenRouterRequest {
+  prompt: string;
+  model?: OpenRouterModel;
+  type: OpenRouterType;
+  temperature?: number;
+  max_tokens?: number;
+}
+
+export interface OpenRouterResponse {
+  content?: string;
+  imageUrl?: string;
+  videoUrl?: string;
+  model: string;
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+}
+
+export interface OpenRouterModelInfo {
+  id: string;
+  name: string;
+  description: string;
+}
