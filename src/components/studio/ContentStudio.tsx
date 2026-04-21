@@ -741,10 +741,21 @@ function AudioLabView() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, voiceId, stability, similarity })
       })
+      
       if (!resp.ok) {
-        const err = await resp.json()
-        throw new Error(err.error?.message || err.error || 'Failed')
+        const contentType = resp.headers.get('Content-Type')
+        let errMsg = 'Failed to generate audio'
+        
+        if (contentType?.includes('json')) {
+          const err = await resp.json()
+          errMsg = err.error || err.message || JSON.stringify(err)
+        } else {
+          errMsg = `Server error: ${resp.status}`
+        }
+        
+        throw new Error(errMsg)
       }
+      
       const blob = await resp.blob()
       const url = URL.createObjectURL(blob)
       setAudioUrl(url)
@@ -752,6 +763,7 @@ function AudioLabView() {
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
       alert((lang === 'ar' ? 'خطأ في التوليد: ' : 'Error: ') + errorMessage)
+      console.error('Audio generation error:', errorMessage)
     } finally {
       setLoading(false)
     }

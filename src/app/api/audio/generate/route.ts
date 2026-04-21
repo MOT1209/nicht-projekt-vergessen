@@ -27,9 +27,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'ElevenLabs API key not configured' }, { status: 500 })
     }
 
-    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${finalVoiceId}`, {
+    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${finalVoiceId}?optimize_streaming_latency=4`, {
       method: 'POST',
       headers: {
+        'Accept': 'audio/mpeg',
         'Content-Type': 'application/json',
         'xi-api-key': apiKey,
       },
@@ -46,11 +47,19 @@ export async function POST(req: NextRequest) {
     })
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({}))
-      console.error('ElevenLabs API error:', error)
-      return NextResponse.json({ 
-        error: error.detail?.message || error.error || `ElevenLabs API error: ${response.status}` 
-      }, { status: response.status })
+      const contentType = response.headers.get('Content-Type')
+      let errorMessage = `ElevenLabs API error: ${response.status}`
+      
+      if (contentType?.includes('application/json')) {
+        const error = await response.json()
+        errorMessage = error.detail?.message || error.error?.message || error.message || errorMessage
+      } else {
+        const textError = await response.text()
+        if (textError) errorMessage = textError
+      }
+      
+      console.error('ElevenLabs API error:', errorMessage, 'Status:', response.status)
+      return NextResponse.json({ error: errorMessage }, { status: response.status })
     }
 
     const audioBuffer = await response.arrayBuffer()
@@ -58,7 +67,6 @@ export async function POST(req: NextRequest) {
     return new NextResponse(audioBuffer, {
       headers: {
         'Content-Type': 'audio/mpeg',
-        'Content-Length': audioBuffer.byteLength.toString(),
       },
     })
 
