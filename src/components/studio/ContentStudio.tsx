@@ -468,25 +468,98 @@ function ThumbnailView() {
   const [imageUrl, setImageUrl] = useState('')
   const [loading, setLoading] = useState(false)
   const [activePreset, setActivePreset] = useState('none')
-  const [gallery, setGallery] = useState<{url: string; prompt: string}[]>([])
+  const [gallery, setGallery] = useState<{url: string; prompt: string; provider: string}[]>([])
+  const [useOpenRouter, setUseOpenRouter] = useState(false)
+  const [selectedImageModel, setSelectedImageModel] = useState('stabilityai/sd-xl')
 
   const presets = getThumbnailPresets(lang)
 
-  const handleGenerate = (): void => {
+  const imageModels = [
+    { id: 'stabilityai/sd-xl', name: 'SDXL', desc: 'Stable Diffusion XL' },
+    { id: 'black-forest-labs/FLUX.1-schnell', name: 'Flux', desc: 'Fast & Quality' }
+  ]
+
+  const handleGenerate = async (): Promise<void> => {
     if (!prompt) return
     setLoading(true)
-    const seed = Math.floor(Math.random() * 10000)
-    const fullPrompt = prompt + (presets.find(p => p.id === activePreset)?.prompt || '')
-    const newImageUrl = `https://pollinations.ai/p/${encodeURIComponent(fullPrompt)}?width=1280&height=720&seed=${seed}`
-    setImageUrl(newImageUrl)
-    setGallery(prev => [{ url: newImageUrl, prompt }, ...prev].slice(0, 12))
-    addToHistory({ type: 'thumbnail', prompt, url: newImageUrl })
-    setTimeout(() => setLoading(false), 2000)
+    setImageUrl('')
+    
+    try {
+      if (useOpenRouter) {
+        const fullPrompt = prompt + (presets.find(p => p.id === activePreset)?.prompt || '')
+        
+        const resp = await fetch('/api/openrouter', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: fullPrompt,
+            type: 'image',
+            model: selectedImageModel
+          })
+        })
+        
+        const data = await resp.json()
+        
+        if (!resp.ok) {
+          throw new Error(data.error || 'Failed to generate image')
+        }
+        
+        if (data.imageUrl) {
+          setImageUrl(data.imageUrl)
+          setGallery(prev => [{ url: data.imageUrl, prompt, provider: 'OpenRouter' }, ...prev].slice(0, 12))
+          addToHistory({ type: 'thumbnail', prompt, url: data.imageUrl })
+        }
+      } else {
+        const seed = Math.floor(Math.random() * 10000)
+        const fullPrompt = prompt + (presets.find(p => p.id === activePreset)?.prompt || '')
+        const newImageUrl = `https://pollinations.ai/p/${encodeURIComponent(fullPrompt)}?width=1280&height=720&seed=${seed}`
+        setImageUrl(newImageUrl)
+        setGallery(prev => [{ url: newImageUrl, prompt, provider: 'Pollinations' }, ...prev].slice(0, 12))
+        addToHistory({ type: 'thumbnail', prompt, url: newImageUrl })
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Unknown error'
+      alert(lang === 'ar' ? `خطأ: ${msg}` : `Error: ${msg}`)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="bg-slate-100 dark:bg-slate-900/40 rounded-[3rem] border border-black/10 dark:border-white/10 p-10 backdrop-blur-xl shadow-2xl">
+        
+        {/* Provider Toggle */}
+        <div className="flex items-center justify-center gap-2 mb-6">
+          <button 
+            onClick={() => setUseOpenRouter(false)}
+            className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${!useOpenRouter ? 'bg-cyan-500/20 border-cyan-400 text-cyan-400' : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/5 text-slate-500'}`}
+          >
+            Pollinations (مجانا)
+          </button>
+          <button 
+            onClick={() => setUseOpenRouter(true)}
+            className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${useOpenRouter ? 'bg-cyan-500/20 border-cyan-400 text-cyan-400' : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/5 text-slate-500'}`}
+          >
+            OpenRouter (SDXL/Flux)
+          </button>
+        </div>
+
+        {/* Model Selection (only for OpenRouter) */}
+        {useOpenRouter && (
+          <div className="flex items-center justify-center gap-2 mb-6">
+            {imageModels.map(model => (
+              <button 
+                key={model.id}
+                onClick={() => setSelectedImageModel(model.id)}
+                className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${selectedImageModel === model.id ? 'bg-purple-500/20 border-purple-400 text-purple-400' : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/5 text-slate-500'}`}
+              >
+                {model.name}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="flex flex-col md:flex-row gap-6 mb-8">
           <div className="flex-1 relative">
              <input 
@@ -531,7 +604,12 @@ function ThumbnailView() {
             <>
               <img src={imageUrl} alt="Generated" className="w-full h-full object-cover animate-in fade-in zoom-in-110 duration-1000" />
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4 backdrop-blur-sm">
-                <button className="p-4 bg-white text-slate-950 rounded-2xl hover:scale-110 transition-transform shadow-xl">
+                <button onClick={() => {
+                  const link = document.createElement('a')
+                  link.href = imageUrl
+                  link.download = `image_${Date.now()}.jpg`
+                  link.click()
+                }} className="p-4 bg-white text-slate-950 rounded-2xl hover:scale-110 transition-transform shadow-xl">
                   <Download size={24} />
                 </button>
               </div>

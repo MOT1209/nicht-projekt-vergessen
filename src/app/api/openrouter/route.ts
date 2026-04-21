@@ -54,9 +54,10 @@ export async function POST(req: NextRequest) {
         break
       
       case 'image':
+        const { model: imageModel = 'stabilityai/sd-xl' } = await req.json()
         endpoint = 'https://openrouter.ai/api/v1/images/generations'
         requestBody = {
-          model: 'stabilityai/sd-xl',
+          model: imageModel,
           prompt,
           size: '1024x1024',
           steps: 20,
