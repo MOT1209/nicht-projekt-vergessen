@@ -55,10 +55,19 @@ function getStoredHistory(): StudioHistoryItem[] {
   } catch { return [] }
 }
 
-function addToHistory(item: StudioHistoryItem): void {
+function addToHistory(item: Partial<StudioHistoryItem>): void {
   if (typeof window === 'undefined') return
   const history = getStoredHistory()
-  const newItem = { ...item, id: Date.now(), createdAt: Date.now() }
+  const newItem: StudioHistoryItem = {
+    id: Date.now(),
+    createdAt: Date.now(),
+    type: item.type || 'text',
+    prompt: item.prompt,
+    text: item.text,
+    content: item.content,
+    url: item.url,
+    contentType: item.contentType,
+  }
   history.unshift(newItem)
   localStorage.setItem(STORAGE_KEYS.history, JSON.stringify(history.slice(0, 50)))
 }
