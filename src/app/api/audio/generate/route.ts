@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'ElevenLabs API key not configured' }, { status: 500 })
     }
 
-    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${finalVoiceId}?optimize_streaming_latency=4`, {
+    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${finalVoiceId}`, {
       method: 'POST',
       headers: {
         'Accept': 'audio/mpeg',
@@ -36,12 +36,9 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         text: text,
-        model_id: 'eleven_multilingual_v2',
         voice_settings: {
           stability: Number(stability) || 0.5,
           similarity_boost: Number(similarity) || 0.75,
-          style: 0.0,
-          use_speaker_boost: true
         },
       }),
     })
