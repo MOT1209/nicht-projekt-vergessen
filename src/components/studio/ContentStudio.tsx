@@ -23,6 +23,7 @@ type StudioHistoryItem = {
   content?: string;
   url?: string;
   contentType?: string;
+  status?: string;
   createdAt: number;
 }
 
@@ -67,6 +68,7 @@ function addToHistory(item: Partial<StudioHistoryItem>): void {
     content: item.content,
     url: item.url,
     contentType: item.contentType,
+    status: item.status,
   }
   history.unshift(newItem)
   localStorage.setItem(STORAGE_KEYS.history, JSON.stringify(history.slice(0, 50)))
