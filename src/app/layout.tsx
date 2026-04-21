@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { WorkspaceProvider } from '@/store/workspace-store'
 import { TopNav } from '@/components/shared/TopNav'
+import { ThemeProvider } from '@/components/theme-provider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -17,14 +18,19 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={`${inter.className} bg-slate-950 text-slate-50 min-h-screen`}>
-        <WorkspaceProvider>
-          <TopNav />
-          <main className="pt-14">
-            {children}
-          </main>
-        </WorkspaceProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.className} min-h-screen`}>
+        <ThemeProvider
+          defaultTheme="dark"
+          storageKey="alking-theme"
+        >
+          <WorkspaceProvider>
+            <TopNav />
+            <main className="pt-14">
+              {children}
+            </main>
+          </WorkspaceProvider>
+        </ThemeProvider>
       </body>
     </html>
   )
