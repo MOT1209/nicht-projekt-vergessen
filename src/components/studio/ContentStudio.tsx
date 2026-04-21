@@ -303,6 +303,13 @@ function VideoEditorView() {
   const [layerReady, setLayerReady] = useState(false)
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [useOpenRouter, setUseOpenRouter] = useState(false)
+  const [selectedVideoModel, setSelectedVideoModel] = useState('runway-gen-2')
+
+  const videoModels = [
+    { id: 'runway-gen-2', name: 'Runway Gen-2', desc: 'High quality video' },
+    { id: 'minimax-video-01', name: 'MiniMax', desc: 'Fast generation' }
+  ]
 
   const handleGenerateScene = async () => {
     if (!prompt) return
@@ -310,29 +317,58 @@ function VideoEditorView() {
     setError(null)
     
     try {
-      const resp = await fetch('/api/video/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          prompt,
-          duration: 4,
-          aspectRatio: '16:9'
+      if (useOpenRouter) {
+        const resp = await fetch('/api/openrouter', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            prompt,
+            type: 'video',
+            model: selectedVideoModel,
+            duration: 5,
+            aspect_ratio: '16:9'
+          })
         })
-      })
-      
-      const data = await resp.json()
-      
-      if (!resp.ok) {
-        throw new Error(data.error || 'Failed to generate video')
-      }
-      
-      if (data.videoUrl) {
-        setVideoUrl(data.videoUrl)
-        setLayerReady(true)
-        addToHistory({ type: 'video', prompt, url: data.videoUrl })
-      } else if (data.status === 'processing') {
-        setLayerReady(true)
-        addToHistory({ type: 'video', prompt, status: 'processing' })
+        
+        const data = await resp.json()
+        
+        if (!resp.ok) {
+          throw new Error(data.error || 'Failed to generate video')
+        }
+        
+        if (data.videoUrl) {
+          setVideoUrl(data.videoUrl)
+          setLayerReady(true)
+          addToHistory({ type: 'video', prompt, url: data.videoUrl })
+        } else if (data.status === 'processing') {
+          setLayerReady(true)
+          addToHistory({ type: 'video', prompt, status: 'processing' })
+        }
+      } else {
+        const resp = await fetch('/api/video/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            prompt,
+            duration: 4,
+            aspectRatio: '16:9'
+          })
+        })
+        
+        const data = await resp.json()
+        
+        if (!resp.ok) {
+          throw new Error(data.error || 'Failed to generate video')
+        }
+        
+        if (data.videoUrl) {
+          setVideoUrl(data.videoUrl)
+          setLayerReady(true)
+          addToHistory({ type: 'video', prompt, url: data.videoUrl })
+        } else if (data.status === 'processing') {
+          setLayerReady(true)
+          addToHistory({ type: 'video', prompt, status: 'processing' })
+        }
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Unknown error'
@@ -345,6 +381,23 @@ function VideoEditorView() {
   
   return (
     <div className="h-full flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      
+      {/* Provider Toggle */}
+      <div className="flex items-center justify-center gap-2">
+        <button 
+          onClick={() => setUseOpenRouter(false)}
+          className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${!useOpenRouter ? 'bg-purple-500/20 border-purple-400 text-purple-400' : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/5 text-slate-500'}`}
+        >
+          Pika (Fal.ai)
+        </button>
+        <button 
+          onClick={() => setUseOpenRouter(true)}
+          className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${useOpenRouter ? 'bg-purple-500/20 border-purple-400 text-purple-400' : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/5 text-slate-500'}`}
+        >
+          OpenRouter
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
         {/* Preview Area */}
         <div className="lg:col-span-2 flex flex-col gap-4">
