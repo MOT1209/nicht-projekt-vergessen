@@ -68,6 +68,8 @@ ${recentNotes.map((n: any) => `- ${n.content.substring(0, 150)}`).join('\n')}
     );
 
     if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      console.error('Gemini AI Summary API error:', errorData)
       const fallbackSummary = generateFallbackSummary(project, pendingTasks, doneTasks, recentNotes);
       return NextResponse.json({ summary: fallbackSummary, source: 'fallback' });
     }
