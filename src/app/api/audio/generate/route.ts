@@ -1,31 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+export const runtime = 'nodejs'
+
+const VALID_VOICES = [
+  'pNInz6obbfDQGcgMyIGD', // Adam
+  'EXAVITQu4vr4xnSDxMaL',  // Sarah
+  '2EiwWnXFnvU5JabPnv8n',  // Tarik
+  'ErXwobaYiN019PkySvjV',  // Antoni
+]
+
+const DEFAULT_VOICE = 'pNInz6obbfDQGcgMyIGD'
+
 export async function POST(req: NextRequest) {
   try {
-    const { text, voiceId = '21m00Tcm4TlvDq8ikWAM', stability = 0.5, similarity = 0.75 } = await req.json()
+    const body = await req.json()
+    const { text, voiceId, stability = 0.5, similarity = 0.75 } = body
 
-    if (!text) {
-      return NextResponse.json({ error: 'No text provided' }, { status: 400 })
+    if (!text || typeof text !== 'string') {
+      return NextResponse.json({ error: 'No text provided or invalid text format' }, { status: 400 })
     }
+
+    const finalVoiceId = voiceId && VALID_VOICES.includes(voiceId) ? voiceId : DEFAULT_VOICE
 
     const apiKey = process.env.ELEVENLABS_API_KEY
     if (!apiKey) {
       return NextResponse.json({ error: 'ElevenLabs API key not configured' }, { status: 500 })
     }
 
-    // Default to multi-lingual model v2 for better Arabic support!
-    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${finalVoiceId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'xi-api-key': apiKey,
       },
       body: JSON.stringify({
-        text,
-        model_id: 'eleven_multilingual_v2', // Best for Arabic + English
+        text: text,
+        model_id: 'eleven_multilingual_v2',
         voice_settings: {
-          stability: Number(stability),
-          similarity_boost: Number(similarity),
+          stability: Number(stability) || 0.5,
+          similarity_boost: Number(similarity) || 0.75,
           style: 0.0,
           use_speaker_boost: true
         },
@@ -33,18 +46,24 @@ export async function POST(req: NextRequest) {
     })
 
     if (!response.ok) {
-      const error = await response.json()
-      return NextResponse.json({ error }, { status: response.status })
+      const error = await response.json().catch(() => ({}))
+      console.error('ElevenLabs API error:', error)
+      return NextResponse.json({ 
+        error: error.detail?.message || error.error || `ElevenLabs API error: ${response.status}` 
+      }, { status: response.status })
     }
 
     const audioBuffer = await response.arrayBuffer()
-    return new Response(audioBuffer, {
+    
+    return new NextResponse(audioBuffer, {
       headers: {
         'Content-Type': 'audio/mpeg',
+        'Content-Length': audioBuffer.byteLength.toString(),
       },
     })
 
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error('TTS Error:', error)
+    return NextResponse.json({ error: error.message || 'Unknown error occurred' }, { status: 500 })
   }
 }
