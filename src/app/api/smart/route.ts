@@ -28,14 +28,14 @@ export async function POST(req: NextRequest) {
     let success = false
     let lastError = ''
 
-    // === TEXT GENERATION (Chat) ===
+// === TEXT GENERATION (Chat) ===
     if (task === 'chat' || task === 'text' || type === 'chat') {
       const textProviders = [
         {
           name: 'openrouter',
           url: 'https://openrouter.ai/api/v1/chat/completions',
           body: {
-            model: 'gemma-4-27b-at',
+            model: 'meta-llama/llama-3.1-8b-instruct',
             messages: [{ role: 'user', content: prompt }],
             temperature: 0.7,
             max_tokens: 1000
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-            'HTTP-Referer': 'https://termin77-app.netlify.app',
+            'HTTP-Referer': 'https://termin77-app.netcel.app',
             'X-Title': 'AlKing Dashboard'
           }
         },
@@ -217,18 +217,10 @@ export async function POST(req: NextRequest) {
           }
         },
         {
-          name: 'elevenlabs',
-          url: `https://api.elevenlabs.io/v1/text-to-speech/pNInz6obbfDQGcgMyIGD?optimize_latency=4`,
-          body: {
-            text: prompt.slice(0, 2500),
-            model_id: 'eleven_multilingual_v2',
-            voice_settings: { stability: 0.5, similarity_boost: 0.75 }
-          },
-          headers: {
-            'Accept': 'audio/mpeg',
-            'Content-Type': 'application/json',
-            'xi-api-key': process.env.ELEVENLABS_API_KEY
-          }
+          name: 'coqui',
+          url: 'https://api.coqui.ai/v2/tts',
+          body: { text: prompt.slice(0, 1000), language: 'arabic' },
+          headers: { 'Content-Type': 'application/json' }
         }
       ]
 
