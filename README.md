@@ -17,7 +17,7 @@
 
 ## النشر
 
-المشروع منشور على:dashboard77-phi.vercel.app
+المشروع منشور على:https://dashboard77-phi.vercel.app/
 ## التطوير المحلي
 
 ```bash
