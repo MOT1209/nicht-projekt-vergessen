@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 const TIMEOUT = 30000
+const API_VERSION = '2.1'
 
 async function fetchWithTimeout(url: string, options: RequestInit, timeout = TIMEOUT): Promise<Response> {
   const controller = new AbortController()
