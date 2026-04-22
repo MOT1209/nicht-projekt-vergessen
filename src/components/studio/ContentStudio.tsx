@@ -303,13 +303,6 @@ function VideoEditorView() {
   const [layerReady, setLayerReady] = useState(false)
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [useSmartAPI, setUseSmartAPI] = useState(true)
-  const [selectedVideoModel, setSelectedVideoModel] = useState('runway-gen-2')
-
-  const videoModels = [
-    { id: 'runway-gen-2', name: 'Runway Gen-2', desc: 'High quality video' },
-    { id: 'minimax-video-01', name: 'MiniMax', desc: 'Fast generation' }
-  ]
 
 const handleGenerateScene = async () => {
     if (!prompt) return
@@ -354,13 +347,7 @@ const handleGenerateScene = async () => {
       {/* Smart API Status */}
       <div className="flex items-center justify-center gap-2 p-4 bg-gradient-to-r from-purple-500/10 to-cyan-500/10 rounded-xl border border-purple-500/20">
         <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-        <span className="text-xs font-bold text-purple-400">
-          {useSmartAPI ? '🔄 Smart API - Auto Failover Enabled' : 'Manual Mode'}
-        </span>
-      </div>
-        >
-          OpenRouter
-        </button>
+        <span className="text-xs font-bold text-purple-400">🔄 Smart API - Auto Failover Enabled</span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
@@ -488,14 +475,9 @@ function ThumbnailView() {
   const [activePreset, setActivePreset] = useState('none')
   const [gallery, setGallery] = useState<{url: string; prompt: string; provider: string}[]>([])
 
-  const presets = getThumbnailPresets(lang)
+const presets = getThumbnailPresets(lang)
 
-  const imageModels = [
-    { id: 'stabilityai/sd-xl', name: 'SDXL', desc: 'Stable Diffusion XL' },
-    { id: 'black-forest-labs/FLUX.1-schnell', name: 'Flux', desc: 'Fast & Quality' }
-  ]
-
-const handleGenerate = async (): Promise<void> => {
+  const handleGenerate = async (): Promise<void> => {
     if (!prompt) return
     setLoading(true)
     setImageUrl('')
@@ -530,62 +512,18 @@ const handleGenerate = async (): Promise<void> => {
       setLoading(false)
     }
   }
-        
-        if (data.imageUrl) {
-          setImageUrl(data.imageUrl)
-          setGallery(prev => [{ url: data.imageUrl, prompt, provider: 'OpenRouter' }, ...prev].slice(0, 12))
-          addToHistory({ type: 'thumbnail', prompt, url: data.imageUrl })
-        }
-      } else {
-        const seed = Math.floor(Math.random() * 10000)
-        const fullPrompt = prompt + (presets.find(p => p.id === activePreset)?.prompt || '')
-        const newImageUrl = `https://pollinations.ai/p/${encodeURIComponent(fullPrompt)}?width=1280&height=720&seed=${seed}`
-        setImageUrl(newImageUrl)
-        setGallery(prev => [{ url: newImageUrl, prompt, provider: 'Pollinations' }, ...prev].slice(0, 12))
-        addToHistory({ type: 'thumbnail', prompt, url: newImageUrl })
-      }
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Unknown error'
-      alert(lang === 'ar' ? `خطأ: ${msg}` : `Error: ${msg}`)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="bg-slate-100 dark:bg-slate-900/40 rounded-[3rem] border border-black/10 dark:border-white/10 p-10 backdrop-blur-xl shadow-2xl">
         
-        {/* Provider Toggle */}
-        <div className="flex items-center justify-center gap-2 mb-6">
-          <button 
-            onClick={() => setUseOpenRouter(false)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${!useOpenRouter ? 'bg-cyan-500/20 border-cyan-400 text-cyan-400' : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/5 text-slate-500'}`}
-          >
-            Pollinations (مجانا)
-          </button>
-          <button 
-            onClick={() => setUseOpenRouter(true)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${useOpenRouter ? 'bg-cyan-500/20 border-cyan-400 text-cyan-400' : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/5 text-slate-500'}`}
-          >
-            OpenRouter (SDXL/Flux)
-          </button>
+        {/* Smart API Status Banner */}
+        <div className="flex items-center justify-center gap-2 mb-4 p-3 bg-gradient-to-r from-purple-500/10 to-cyan-500/10 rounded-xl border border-purple-500/20">
+          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+          <span className="text-xs font-bold text-purple-400">
+            🔄 Smart API - نظام ذكي مع تحويل تلقائي
+          </span>
         </div>
-
-        {/* Model Selection (only for OpenRouter) */}
-        {useOpenRouter && (
-          <div className="flex items-center justify-center gap-2 mb-6">
-            {imageModels.map(model => (
-              <button 
-                key={model.id}
-                onClick={() => setSelectedImageModel(model.id)}
-                className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${selectedImageModel === model.id ? 'bg-purple-500/20 border-purple-400 text-purple-400' : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/5 text-slate-500'}`}
-              >
-                {model.name}
-              </button>
-            ))}
-          </div>
-        )}
 
         <div className="flex flex-col md:flex-row gap-6 mb-8">
           <div className="flex-1 relative">
@@ -708,19 +646,12 @@ function FactoryView() {
           />
         </div>
 
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <button 
-            onClick={() => setUseOpenRouter(false)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${!useOpenRouter ? 'bg-purple-500/20 border-purple-400 text-purple-400' : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/5 text-slate-500 hover:text-slate-700 dark:text-slate-300'}`}
-          >
-            Gemini
-          </button>
-          <button 
-            onClick={() => setUseOpenRouter(true)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${useOpenRouter ? 'bg-purple-500/20 border-purple-400 text-purple-400' : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/5 text-slate-500 hover:text-slate-700 dark:text-slate-300'}`}
-          >
-            OpenRouter (Gemma 4B)
-          </button>
+        {/* Smart API Status Banner */}
+        <div className="flex items-center justify-center gap-2 mb-4 p-3 bg-gradient-to-r from-purple-500/10 to-cyan-500/10 rounded-xl border border-purple-500/20">
+          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+          <span className="text-xs font-bold text-purple-400">
+            🔄 Smart API - نظام ذكي مع تحويل تلقائي
+          </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -729,7 +660,7 @@ function FactoryView() {
             icon={<Play size={20} />}
             color="from-red-500/20"
             desc={t('video_script_desc')}
-            onClick={() => generateContent('script', useOpenRouter)}
+            onClick={() => generateContent('script')}
             loading={loading}
           />
           <FactoryCard 
@@ -737,7 +668,7 @@ function FactoryView() {
             icon={<FileText size={20} />}
             color="from-blue-500/20"
             desc={t('seo_blog_desc')}
-            onClick={() => generateContent('blog', useOpenRouter)}
+            onClick={() => generateContent('blog')}
             loading={loading}
           />
           <FactoryCard 
@@ -745,7 +676,7 @@ function FactoryView() {
             icon={<Sparkles size={20} />}
             color="from-amber-500/20"
             desc={t('viral_ideas_desc')}
-            onClick={() => generateContent('ideas', useOpenRouter)}
+            onClick={() => generateContent('ideas')}
             loading={loading}
           />
         </div>
@@ -797,11 +728,6 @@ function AudioLabView() {
   const [text, setText] = useState('')
   const [audioUrl, setAudioUrl] = useState('')
   const [loading, setLoading] = useState(false)
-  const [voiceId, setVoiceId] = useState('pNInz6obbfDQGcgMyIGD') // ElevenLabs voice
-  const [stability, setStability] = useState(0.5)
-  const [similarity, setSimilarity] = useState(0.75)
-  const [useOpenRouterTTS, setUseOpenRouterTTS] = useState(true)
-  const [openRouterVoice, setOpenRouterVoice] = useState('arabic')
   const [history, setHistory] = useState<{url: string, text: string, voiceName: string, timestamp: number, provider: string}[]>([])
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const previousAudioRef = useRef<string>('')
@@ -824,34 +750,24 @@ function AudioLabView() {
     previousAudioRef.current = audioUrl
   }, [audioUrl])
 
-    const elevenVoices = [
-    { id: 'pNInz6obbfDQGcgMyIGD', icon: '👨🏻‍🦳', labelEn: 'Adam', descEn: 'Deep Narrative', labelAr: 'آدم', descAr: 'صوت وثائقي عميق', color: 'from-amber-500/20' },
-    { id: 'EXAVITQu4vr4xnSDxMaL', icon: '👩🏻', labelEn: 'Sarah', descEn: 'Soft Female', labelAr: 'سارة', descAr: 'سرد قصصي ناعم', color: 'from-pink-500/20' },
-    { id: '2EiwWnXFnvU5JabPnv8n', icon: '👨🏻', labelEn: 'Tarik', descEn: 'News & Formal', labelAr: 'طارق', descAr: 'إخباري ورسمي', color: 'from-blue-500/20' },
-    { id: 'ErXwobaYiN019PkySvjV', icon: '🧔🏻', labelEn: 'Antoni', descEn: 'Dramatic Focus', labelAr: 'أنتوني', descAr: 'درامي وحماسي', color: 'from-purple-500/20' }
-  ]
-
-  const openRouterVoices = [
+    const openRouterVoices = [
     { id: 'arabic', icon: '🕌', labelEn: 'Arabic', descEn: 'Arabic TTS', labelAr: 'عربي', descAr: 'تحويل نص لعربي', color: 'from-green-500/20' },
     { id: 'english', icon: '🇬🇧', labelEn: 'English', descEn: 'English TTS', labelAr: 'إنجليزي', descAr: 'تحويل نص لإنجليزي', color: 'from-blue-500/20' },
     { id: 'male', icon: '👨', labelEn: 'Male', descEn: 'Male Voice', labelAr: 'ذكر', descAr: 'صوت ذكر', color: 'from-cyan-500/20' },
     { id: 'female', icon: '👩', labelEn: 'Female', descEn: 'Female Voice', labelAr: 'أنثى', descAr: 'صوت أنثى', color: 'from-pink-500/20' }
   ]
 
-  const voices = useOpenRouterTTS ? openRouterVoices : elevenVoices
+  const voices = openRouterVoices
 
   const getVoiceName = (id: string) => {
-    const currentVoices = useOpenRouterTTS ? openRouterVoices : elevenVoices
-    const v = currentVoices.find(v => v.id === id)
+    const v = openRouterVoices.find(v => v.id === id)
     return v ? (lang === 'ar' ? v.labelAr : v.labelEn) : 'Voice'
   }
 
+  const [selectedVoice, setSelectedVoice] = useState('arabic')
+
   const handleVoiceChange = (id: string) => {
-    if (useOpenRouterTTS) {
-      setOpenRouterVoice(id)
-    } else {
-      setVoiceId(id)
-    }
+    setSelectedVoice(id)
   }
 
   const generateAudio = async () => {
@@ -918,37 +834,21 @@ function AudioLabView() {
               {t('voice_talent')}
             </h3>
             
-            {/* Provider Toggle */}
-            <div className="flex items-center justify-center gap-2 mb-4">
-                <button 
-                  onClick={() => { setUseOpenRouterTTS(false); setVoiceId('pNInz6obbfDQGcgMyIGD'); }}
-                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${!useOpenRouterTTS ? 'bg-purple-500/20 border-purple-400 text-purple-400' : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/5 text-slate-500'}`}
-                >
-                  ElevenLabs
-                </button>
-                <button 
-                  onClick={() => { setUseOpenRouterTTS(true); setOpenRouterVoice('arabic'); }}
-                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${useOpenRouterTTS ? 'bg-purple-500/20 border-purple-400 text-purple-400' : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/5 text-slate-500'}`}
-                >
-                  OpenRouter (مجانا)
-                </button>
-              </div>
-
             <div className="grid grid-cols-2 gap-3">
               {voices.map(v => (
                 <button 
                   key={v.id}
-                  onClick={() => handleVoiceChange(v.id)}
+                  onClick={() => setSelectedVoice(v.id)}
                   className={`relative p-4 rounded-3xl transition-all duration-500 overflow-hidden text-left flex flex-col gap-2 items-center text-center
-                    ${(useOpenRouterTTS ? openRouterVoice : voiceId) === v.id 
+                    ${selectedVoice === v.id 
                       ? 'bg-black/5 dark:bg-white/10 shadow-[0_0_30px_-5px_rgba(255,255,255,0.1)] scale-105 z-10' 
                       : 'bg-white/[0.02] hover:bg-white/[0.05] grayscale-[50%] hover:grayscale-0'
                     }`}
                 >
-                  {(useOpenRouterTTS ? openRouterVoice : voiceId) === v.id && (
+                  {selectedVoice === v.id && (
                     <div className={`absolute inset-0 bg-gradient-to-br ${v.color} opacity-40`} />
                   )}
-                  {(useOpenRouterTTS ? openRouterVoice : voiceId) === v.id && (
+                  {selectedVoice === v.id && (
                     <div className="absolute inset-0 ring-1 ring-inset ring-white/20 rounded-3xl" />
                   )}
                   <span className="text-3xl relative z-10 drop-shadow-lg">{v.icon}</span>
@@ -958,57 +858,6 @@ function AudioLabView() {
                   </div>
                 </button>
               ))}
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              {voices.map(v => (
-                <button 
-                  key={v.id}
-                  onClick={() => handleVoiceChange(v.id)}
-                  className={`relative p-4 rounded-3xl transition-all duration-500 overflow-hidden text-left flex flex-col gap-2 items-center text-center
-                    ${(useOpenRouterTTS ? openRouterVoice : voiceId) === v.id 
-                      ? 'bg-black/5 dark:bg-white/10 shadow-[0_0_30px_-5px_rgba(255,255,255,0.1)] scale-105 z-10' 
-                      : 'bg-white/[0.02] hover:bg-white/[0.05] grayscale-[50%] hover:grayscale-0'
-                    }`}
-                >
-                  {(useOpenRouterTTS ? openRouterVoice : voiceId) === v.id && (
-                    <div className={`absolute inset-0 bg-gradient-to-br ${v.color} opacity-40`} />
-                  )}
-                  {(useOpenRouterTTS ? openRouterVoice : voiceId) === v.id && (
-                    <div className="absolute inset-0 ring-1 ring-inset ring-white/20 rounded-3xl" />
-                  )}
-                  <span className="text-3xl relative z-10 drop-shadow-lg">{v.icon}</span>
-                  <div className="relative z-10">
-                    <div className="text-[11px] font-black text-slate-800 dark:text-slate-200">{lang === 'ar' ? v.labelAr : v.labelEn}</div>
-                    <div className="text-[9px] text-slate-600 dark:text-slate-400 mt-1">{lang === 'ar' ? v.descAr : v.descEn}</div>
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-8 space-y-6">
-              <div>
-                <div className="flex justify-between items-center mb-3">
-                  <label className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">{t('stability')}</label>
-                  <span className="text-[10px] font-black bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full">{Math.round(stability * 100)}%</span>
-                </div>
-                <input 
-                  type="range" min="0" max="1" step="0.05" value={stability} 
-                  onChange={e => setStability(parseFloat(e.target.value))} 
-                  className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-purple-500 hover:accent-purple-400 transition-all" 
-                />
-              </div>
-               <div>
-                <div className="flex justify-between items-center mb-3">
-                  <label className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">{lang === 'ar' ? 'التطابق (Similarity)' : 'Similarity'}</label>
-                  <span className="text-[10px] font-black bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded-full">{Math.round(similarity * 100)}%</span>
-                </div>
-                <input 
-                  type="range" min="0" max="1" step="0.05" value={similarity} 
-                  onChange={e => setSimilarity(parseFloat(e.target.value))} 
-                  className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-500 hover:accent-cyan-400 transition-all" 
-                />
-              </div>
             </div>
           </div>
         </div>
