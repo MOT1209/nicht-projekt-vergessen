@@ -828,8 +828,8 @@ function AudioLabView() {
   const [voiceId, setVoiceId] = useState('pNInz6obbfDQGcgMyIGD') // ElevenLabs voice
   const [stability, setStability] = useState(0.5)
   const [similarity, setSimilarity] = useState(0.75)
-  const [useOpenRouterTTS, setUseOpenRouterTTS] = useState(false)
-  const [openRouterVoice, setOpenRouterVoice] = useState('arabic') // OpenRouter TTS voice
+  const [useOpenRouterTTS, setUseOpenRouterTTS] = useState(true)
+  const [openRouterVoice, setOpenRouterVoice] = useState('arabic')
   const [history, setHistory] = useState<{url: string, text: string, voiceName: string, timestamp: number, provider: string}[]>([])
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const previousAudioRef = useRef<string>('')
