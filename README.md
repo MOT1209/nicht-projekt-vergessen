@@ -17,8 +17,7 @@
 
 ## النشر
 
-المشروع منشور على:https://termin77-app.netlify.app/ 
-
+المشروع منشور على:dashboard77-phi.vercel.app
 ## التطوير المحلي
 
 ```bash
