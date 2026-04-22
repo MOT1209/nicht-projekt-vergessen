@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
         endpoint = 'https://openrouter.ai/api/v1/audio/speech'
         requestBody = {
           model: 'suno/bark',
-          input: prompt,
+          input: prompt.slice(0, 1000),
           voice: voiceSettings[voice] || 'arabic',
           response_format: 'mp3'
         }

@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'ElevenLabs API key not configured' }, { status: 500 })
     }
 
-    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${finalVoiceId}`, {
+    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${finalVoiceId}?optimize_latency=4`, {
       method: 'POST',
       headers: {
         'Accept': 'audio/mpeg',
@@ -35,10 +35,13 @@ export async function POST(req: NextRequest) {
         'xi-api-key': apiKey,
       },
       body: JSON.stringify({
-        text: text,
+        text: text.slice(0, 2500),
+        model_id: 'eleven_multilingual_v2',
         voice_settings: {
           stability: Number(stability) || 0.5,
           similarity_boost: Number(similarity) || 0.75,
+          style: 0.0,
+          use_speaker_boost: false,
         },
       }),
     })
@@ -47,12 +50,16 @@ export async function POST(req: NextRequest) {
       const contentType = response.headers.get('Content-Type')
       let errorMessage = `ElevenLabs API error: ${response.status}`
       
-      if (contentType?.includes('application/json')) {
-        const error = await response.json()
-        errorMessage = error.detail?.message || error.error?.message || error.message || errorMessage
-      } else {
-        const textError = await response.text()
-        if (textError) errorMessage = textError
+      try {
+        if (contentType?.includes('application/json')) {
+          const error = await response.json()
+          errorMessage = error.detail?.message || error.error?.message || error.message || errorMessage
+        } else {
+          const textError = await response.text()
+          if (textError) errorMessage = textError
+        }
+      } catch (e) {
+        console.error('Error parsing ElevenLabs response:', e)
       }
       
       console.error('ElevenLabs API error:', errorMessage, 'Status:', response.status)
