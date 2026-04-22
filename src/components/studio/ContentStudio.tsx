@@ -500,9 +500,9 @@ const presets = getThumbnailPresets(lang)
         throw new Error(data.error || 'Failed to generate image')
       }
       
-      if (data.imageUrl) {
+if (data.imageUrl) {
         setImageUrl(data.imageUrl)
-        setGallery(prev => [{ url: data.imageUrl, prompt, provider: data.provider }, ...prev].slice(0, 12)])
+        setGallery(prev => [{ url: data.imageUrl, prompt, provider: 'smart' }, ...prev].slice(0, 12))
         addToHistory({ type: 'thumbnail', prompt, url: data.imageUrl })
       }
     } catch (e) {
