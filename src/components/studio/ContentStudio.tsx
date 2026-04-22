@@ -303,7 +303,7 @@ function VideoEditorView() {
   const [layerReady, setLayerReady] = useState(false)
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [useOpenRouter, setUseOpenRouter] = useState(false)
+  const [useSmartAPI, setUseSmartAPI] = useState(true)
   const [selectedVideoModel, setSelectedVideoModel] = useState('runway-gen-2')
 
   const videoModels = [
@@ -311,64 +311,33 @@ function VideoEditorView() {
     { id: 'minimax-video-01', name: 'MiniMax', desc: 'Fast generation' }
   ]
 
-  const handleGenerateScene = async () => {
+const handleGenerateScene = async () => {
     if (!prompt) return
     setIsGenerating(true)
     setError(null)
     
     try {
-      if (useOpenRouter) {
-        const resp = await fetch('/api/openrouter', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            prompt,
-            type: 'video',
-            model: selectedVideoModel,
-            duration: 5,
-            aspect_ratio: '16:9'
-          })
+      const resp = await fetch('/api/smart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          task: 'video',
+          prompt
         })
-        
-        const data = await resp.json()
-        
-        if (!resp.ok) {
-          throw new Error(data.error || 'Failed to generate video')
-        }
-        
-        if (data.videoUrl) {
-          setVideoUrl(data.videoUrl)
-          setLayerReady(true)
-          addToHistory({ type: 'video', prompt, url: data.videoUrl })
-        } else if (data.status === 'processing') {
-          setLayerReady(true)
-          addToHistory({ type: 'video', prompt, status: 'processing' })
-        }
-      } else {
-        const resp = await fetch('/api/video/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            prompt,
-            duration: 4,
-            aspectRatio: '16:9'
-          })
-        })
-        
-        const data = await resp.json()
-        
-        if (!resp.ok) {
-          throw new Error(data.error || 'Failed to generate video')
-        }
-        
-        if (data.videoUrl) {
-          setVideoUrl(data.videoUrl)
-          setLayerReady(true)
-          addToHistory({ type: 'video', prompt, url: data.videoUrl })
-        } else if (data.status === 'processing') {
-          setLayerReady(true)
-          addToHistory({ type: 'video', prompt, status: 'processing' })
-        }
+      })
+      
+      const data = await resp.json()
+      
+      if (!resp.ok || !data.success) {
+        throw new Error(data.error || 'Failed to generate video')
+      }
+      
+      if (data.videoUrl) {
+        setVideoUrl(data.videoUrl)
+        setLayerReady(true)
+        addToHistory({ type: 'video', prompt, url: data.videoUrl })
+      } else if (data.status === 'processing') {
+        setLayerReady(true)
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Unknown error'
@@ -382,17 +351,13 @@ function VideoEditorView() {
   return (
     <div className="h-full flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       
-      {/* Provider Toggle */}
-      <div className="flex items-center justify-center gap-2">
-        <button 
-          onClick={() => setUseOpenRouter(false)}
-          className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${!useOpenRouter ? 'bg-purple-500/20 border-purple-400 text-purple-400' : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/5 text-slate-500'}`}
-        >
-          Pika (Fal.ai)
-        </button>
-        <button 
-          onClick={() => setUseOpenRouter(true)}
-          className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${useOpenRouter ? 'bg-purple-500/20 border-purple-400 text-purple-400' : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/5 text-slate-500'}`}
+      {/* Smart API Status */}
+      <div className="flex items-center justify-center gap-2 p-4 bg-gradient-to-r from-purple-500/10 to-cyan-500/10 rounded-xl border border-purple-500/20">
+        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+        <span className="text-xs font-bold text-purple-400">
+          {useSmartAPI ? '🔄 Smart API - Auto Failover Enabled' : 'Manual Mode'}
+        </span>
+      </div>
         >
           OpenRouter
         </button>
@@ -522,8 +487,6 @@ function ThumbnailView() {
   const [loading, setLoading] = useState(false)
   const [activePreset, setActivePreset] = useState('none')
   const [gallery, setGallery] = useState<{url: string; prompt: string; provider: string}[]>([])
-  const [useOpenRouter, setUseOpenRouter] = useState(false)
-  const [selectedImageModel, setSelectedImageModel] = useState('stabilityai/sd-xl')
 
   const presets = getThumbnailPresets(lang)
 
@@ -532,30 +495,41 @@ function ThumbnailView() {
     { id: 'black-forest-labs/FLUX.1-schnell', name: 'Flux', desc: 'Fast & Quality' }
   ]
 
-  const handleGenerate = async (): Promise<void> => {
+const handleGenerate = async (): Promise<void> => {
     if (!prompt) return
     setLoading(true)
     setImageUrl('')
     
     try {
-      if (useOpenRouter) {
-        const fullPrompt = prompt + (presets.find(p => p.id === activePreset)?.prompt || '')
-        
-        const resp = await fetch('/api/openrouter', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            prompt: fullPrompt,
-            type: 'image',
-            model: selectedImageModel
-          })
+      const fullPrompt = prompt + (presets.find(p => p.id === activePreset)?.prompt || '')
+      
+      const resp = await fetch('/api/smart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          task: 'image',
+          prompt: fullPrompt
         })
-        
-        const data = await resp.json()
-        
-        if (!resp.ok) {
-          throw new Error(data.error || 'Failed to generate image')
-        }
+      })
+      
+      const data = await resp.json()
+      
+      if (!resp.ok || !data.success) {
+        throw new Error(data.error || 'Failed to generate image')
+      }
+      
+      if (data.imageUrl) {
+        setImageUrl(data.imageUrl)
+        setGallery(prev => [{ url: data.imageUrl, prompt, provider: data.provider }, ...prev].slice(0, 12)])
+        addToHistory({ type: 'thumbnail', prompt, url: data.imageUrl })
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Unknown error'
+      alert(lang === 'ar' ? `خطأ: ${msg}` : `Error: ${msg}`)
+    } finally {
+      setLoading(false)
+    }
+  }
         
         if (data.imageUrl) {
           setImageUrl(data.imageUrl)
@@ -684,9 +658,8 @@ function FactoryView() {
   const [topic, setTopic] = useState('')
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(false)
-  const [useOpenRouter, setUseOpenRouter] = useState(false)
 
-  const generateContent = async (type: string, provider?: boolean): Promise<void> => {
+  const generateContent = async (type: string): Promise<void> => {
     if (!topic) {
       alert(lang === 'ar' ? 'الرجاء إدخال الموضوع أولاً' : 'Please enter a topic first');
       return;
@@ -694,29 +667,28 @@ function FactoryView() {
     setLoading(true);
     setContent('');
     try {
-      const resp = await fetch(useOpenRouter ? '/api/openrouter' : '/api/gemini/generate', {
+      const resp = await fetch('/api/smart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          prompt: topic, 
-          type,
-          model: useOpenRouter ? 'gemma-4-27b-at' : undefined
+          task: 'chat',
+          prompt: topic,
+          type
         })
       });
       const data = await resp.json();
-      if (!resp.ok) throw new Error(data.error || 'Failed to generate');
+      if (!resp.ok || !data.success) throw new Error(data.error || data.content || 'Failed to generate');
       setContent(data.content);
       addToHistory({ 
         type: 'text', 
         prompt: topic, 
         content: data.content, 
         contentType: type,
-        status: useOpenRouter ? 'openrouter' : 'gemini'
+        status: data.provider || 'smart'
       })
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-      const provider = useOpenRouter ? 'OpenRouter' : 'Gemini';
-      setContent(lang === 'ar' ? `حدث خطأ مع ${provider}: ${errorMessage}` : `Error with ${provider}: ${errorMessage}`);
+      setContent(lang === 'ar' ? `حدث خطأ: ${errorMessage}` : `Error: ${errorMessage}`);
       console.error(e);
     } finally {
       setLoading(false);
@@ -887,45 +859,35 @@ function AudioLabView() {
     setLoading(true)
     setAudioUrl('')
     try {
-      const endpoint = useOpenRouterTTS ? '/api/openrouter' : '/api/audio/generate'
-      const payload = useOpenRouterTTS 
-        ? { prompt: text, type: 'tts', voice: openRouterVoice }
-        : { text, voiceId, stability, similarity }
-      
-      const resp = await fetch(endpoint, {
+      const resp = await fetch('/api/smart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          task: 'tts',
+          prompt: text
+        })
       })
       
       if (!resp.ok) {
-        const contentType = resp.headers.get('Content-Type')
-        let errMsg = 'Failed to generate audio'
-        
-        if (contentType?.includes('json')) {
-          const err = await resp.json()
-          errMsg = err.error || err.message || JSON.stringify(err)
-        } else {
-          errMsg = `Server error: ${resp.status}`
-        }
-        
-        throw new Error(errMsg)
+        const data = await resp.json()
+        throw new Error(data.error || `Server error: ${resp.status}`)
       }
       
-      const blob = await resp.blob()
-      const url = URL.createObjectURL(blob)
-      const voiceName = useOpenRouterTTS 
-        ? openRouterVoices.find(v => v.id === openRouterVoice)?.labelAr || 'OpenRouter'
-        : elevenVoices.find(v => v.id === voiceId)?.labelAr || 'Voice'
+      const data = await resp.json()
       
-      setAudioUrl(url)
-      setHistory(prev => [{ 
-        url, 
-        text: text.substring(0, 50) + '...', 
-        voiceName, 
-        timestamp: Date.now(),
-        provider: useOpenRouterTTS ? 'OpenRouter' : 'ElevenLabs'
-      }, ...prev].slice(0, 10))
+      if (data.audioData) {
+        const url = `data:audio/mpeg;base64,${data.audioData}`
+        setAudioUrl(url)
+        setHistory(prev => [{ 
+          url, 
+          text: text.substring(0, 50) + '...', 
+          voiceName: data.provider || 'Smart TTS', 
+          timestamp: Date.now(),
+          provider: data.provider
+        }, ...prev].slice(0, 10))
+      } else if (data.error) {
+        throw new Error(data.error)
+      }
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
       alert((lang === 'ar' ? 'خطأ في التوليد: ' : 'Error: ') + errorMessage)
