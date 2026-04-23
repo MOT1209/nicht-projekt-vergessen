@@ -2,5 +2,11 @@
   "framework": "nextjs",
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
-  "regions": ["iad1"]
+  "regions": ["iad1"],
+  "env": {
+    "OPENROUTER_API_KEY": "@openrouter-api-key",
+    "GEMINI_API_KEY": "@gemini-api-key",
+    "FAL_AI_KEY": "@fal-ai-key",
+    "OCR_SPACE_API_KEY": "@ocr-space-api-key"
+  }
 }
