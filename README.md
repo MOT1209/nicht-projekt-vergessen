@@ -17,7 +17,9 @@
 
 ## النشر
 
-المشروع منشور على:https://dashboard77-phi.vercel.app/
+المشروع منشور على: https://dashboard77-phi.vercel.app/
+
+✅ Environment Variables مضافة ومفعّلة
 ## التطوير المحلي
 
 ```bash
