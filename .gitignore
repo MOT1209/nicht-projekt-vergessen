@@ -27,3 +27,5 @@ Thumbs.db
 # TypeScript
 *.tsbuildinfo
 nul
+pnpm-lock.yaml
+pnpm-workspace.yaml
