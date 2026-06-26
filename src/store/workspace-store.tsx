@@ -18,6 +18,8 @@ export interface ProjectFile {
 interface WorkspaceState {
   activeWorkspace: WorkspaceType
   setActiveWorkspace: (w: WorkspaceType) => void
+  activeDashboardTab: string
+  setActiveDashboardTab: (t: string) => void
   activeStudioTab: string
   setActiveStudioTab: (t: string) => void
   
@@ -43,6 +45,7 @@ const WorkspaceContext = createContext<WorkspaceState | undefined>(undefined)
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceType>('dashboard')
+  const [activeDashboardTab, setActiveDashboardTab] = useState('main')
   const [activeStudioTab, setActiveStudioTab] = useState('video')
   const [files, setFiles] = useState<ProjectFile[]>([])
   const [lang, setLang] = useState<LanguageType>('ar')
@@ -65,6 +68,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       inspector: 'فاحص الكود',
       studio: 'استوديو المحتوى',
       settings: 'الإعدادات',
+      trends: 'رادار الترندات',
+      engagement: 'بوت التفاعل',
+      revenue: 'لوحة الأرباح',
+      live: 'المركز المباشر',
+      competitors: 'رادار المنافسين',
+      dubber: 'المترجم العالمي',
+      persona: 'الشخصية الرقمية',
       upload: 'رفع المشروع',
       clear: 'مسح المشروع',
       explorer: 'متصفح الملفات',
@@ -153,6 +163,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       inspector: 'Code Inspector',
       studio: 'Content Studio',
       settings: 'Settings',
+      trends: 'Trend Radar',
+      engagement: 'Engagement Bot',
+      revenue: 'Revenue Dashboard',
+      live: 'Live Center',
+      competitors: 'Competitors Radar',
+      dubber: 'Global Dubber',
+      persona: 'AI Persona',
       upload: 'Upload Project',
       clear: 'Clear Project',
       explorer: 'Explorer',
@@ -244,6 +261,8 @@ clear_history: 'Clear History',
     <WorkspaceContext.Provider value={{ 
       activeWorkspace, 
       setActiveWorkspace, 
+      activeDashboardTab,
+      setActiveDashboardTab,
       activeStudioTab, 
       setActiveStudioTab,
       lang,

@@ -10,10 +10,16 @@ import {
   Sparkles,
   Play,
   Download,
-  Wand2
+  Wand2,
+  Globe2,
+  User,
+  Scissors
 } from 'lucide-react'
 
-type StudioTab = 'video' | 'thumbnail' | 'factory' | 'audio'
+import { GlobalDubber } from './GlobalDubber'
+import { AIPersona } from './AIPersona'
+
+type StudioTab = 'video' | 'thumbnail' | 'factory' | 'audio' | 'dubber' | 'persona'
 
 type StudioHistoryItem = {
   id: number;
@@ -138,6 +144,20 @@ export function ContentStudio() {
           label={t('audio')} 
           description={t('audio_desc_sidebar')} 
         />
+        <StudioSidebarItem 
+          active={activeTab === 'dubber'} 
+          onClick={() => setActiveTab('dubber')} 
+          icon={<Globe2 size={18} />} 
+          label={t('dubber')} 
+          description={lang === 'ar' ? 'دبلجة الفيديو للغات متعددة' : 'Dub videos to multiple languages'} 
+        />
+        <StudioSidebarItem 
+          active={activeTab === 'persona'} 
+          onClick={() => setActiveTab('persona')} 
+          icon={<User size={18} />} 
+          label={t('persona')} 
+          description={lang === 'ar' ? 'إنشاء avatar يتكلم بصوتك' : 'Create avatar that speaks with your voice'} 
+        />
 
         <div className="mt-auto p-4 rounded-2xl bg-gradient-to-br from-purple-500/10 to-cyan-500/10 border border-black/10 dark:border-white/5">
           <div className="flex items-center gap-2 mb-2">
@@ -190,6 +210,8 @@ export function ContentStudio() {
             {activeTab === 'thumbnail' && <ThumbnailView />}
             {activeTab === 'factory' && <FactoryView />}
             {activeTab === 'audio' && <AudioLabView />}
+            {activeTab === 'dubber' && <GlobalDubber />}
+            {activeTab === 'persona' && <AIPersona />}
           </div>
         </div>
       </div>
