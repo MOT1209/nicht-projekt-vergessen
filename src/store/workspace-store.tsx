@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, ReactNode } from 'react'
 
-type WorkspaceType = 'inspector' | 'studio' | 'settings'
+type WorkspaceType = 'dashboard' | 'inspector' | 'studio' | 'settings'
 type LanguageType = 'ar' | 'en'
 type ThemeType = 'dark' | 'light'
 
@@ -42,27 +42,13 @@ interface WorkspaceState {
 const WorkspaceContext = createContext<WorkspaceState | undefined>(undefined)
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
-  const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceType>('inspector')
+  const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceType>('dashboard')
   const [activeStudioTab, setActiveStudioTab] = useState('video')
   const [files, setFiles] = useState<ProjectFile[]>([])
   const [lang, setLang] = useState<LanguageType>('ar')
   const [theme, setTheme] = useState<ThemeType>('dark')
   
-  // Force Dev User & Bypass Auth
-  const [user, setUser] = useState<any>(
-    process.env.NODE_ENV === 'development' 
-      ? { 
-          id: 'dev-user-id',
-          email: 'admin@alking.io', 
-          user_metadata: { full_name: 'AlKing Developer' } 
-        } 
-      : null
-  )
-
-  const credits = {
-    elevenlabs: 50000,
-    gemini: 350
-  }
+  const [user, setUser] = useState<any>(null)
 
   const addFiles = (newFiles: ProjectFile[]) => {
     setFiles(prev => [...prev, ...newFiles])
@@ -75,6 +61,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   // Translation Dictionary
   const translations: any = {
     ar: {
+      dashboard: 'لوحة التحكم',
       inspector: 'فاحص الكود',
       studio: 'استوديو المحتوى',
       settings: 'الإعدادات',
@@ -162,6 +149,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       download: 'تحميل'
     },
     en: {
+      dashboard: 'Dashboard',
       inspector: 'Code Inspector',
       studio: 'Content Studio',
       settings: 'Settings',

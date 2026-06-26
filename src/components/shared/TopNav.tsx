@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react'
 import { useWorkspace } from '@/store/workspace-store'
-import { Code2, Clapperboard, LogOut, Settings, Sun, Moon, User as UserIcon } from 'lucide-react'
+import { LayoutDashboard, Code2, Clapperboard, LogOut, Settings, Sun, Moon, User as UserIcon } from 'lucide-react'
 import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
 
@@ -47,6 +47,12 @@ export function TopNav() {
 
         {/* Center: Main Switcher */}
         <div className="flex items-center bg-slate-900/60 p-1 rounded-2xl border border-white/5 shadow-inner">
+          <WorkspaceBtn 
+            active={activeWorkspace === 'dashboard'} 
+            onClick={() => setActiveWorkspace('dashboard')}
+            icon={<LayoutDashboard size={16} />} 
+            label={t('dashboard')}
+          />
           <WorkspaceBtn 
             active={activeWorkspace === 'inspector'} 
             onClick={() => setActiveWorkspace('inspector')}

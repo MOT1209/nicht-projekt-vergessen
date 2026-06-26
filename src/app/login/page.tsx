@@ -18,12 +18,13 @@ export default function LoginPage() {
   const [isAr, setIsAr] = useState(true)
 
   useEffect(() => {
-    // Dev Mode Auto-Bypass
-    if (process.env.NODE_ENV === 'development') {
-      router.push('/')
-      router.refresh()
-    }
-  }, [router])
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        router.push('/')
+        router.refresh()
+      }
+    })
+  }, [supabase, router])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -164,20 +165,7 @@ export default function LoginPage() {
               )}
             </button>
             
-            {/* Dev Bypass Button */}
-            {process.env.NODE_ENV === 'development' && (
-              <button
-                type="button"
-                onClick={() => {
-                  router.push('/')
-                  router.refresh()
-                }}
-                className="w-full py-3 bg-white/5 border border-dashed border-white/20 rounded-xl text-[10px] font-bold text-slate-400 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest"
-              >
-                {isAr ? 'تخطي تسجيل الدخول (للمطورين فقط)' : 'Bypass Login (Dev Only)'}
-              </button>
-            )}
-          </form>
+            </form>
         </div>
 
         <p className="text-center text-[11px] text-slate-600 mt-8">

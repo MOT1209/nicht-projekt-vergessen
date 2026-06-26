@@ -3,6 +3,14 @@
 import { useWorkspace } from '@/store/workspace-store'
 import dynamic from 'next/dynamic'
 
+const Dashboard = dynamic(
+  () => import('@/components/dashboard/Dashboard').then(mod => ({ default: mod.Dashboard })),
+  {
+    loading: () => <WorkspaceLoader label="Dashboard" color="purple" />,
+    ssr: false
+  }
+)
+
 const CodeInspector = dynamic(
   () => import('@/components/inspector/CodeInspector').then(mod => ({ default: mod.CodeInspector })),
   {
@@ -32,6 +40,7 @@ export default function HomePage() {
 
   return (
     <div className="h-[calc(100vh-56px)] w-full overflow-hidden">
+      {activeWorkspace === 'dashboard' && <Dashboard />}
       {activeWorkspace === 'inspector' && <CodeInspector />}
       {activeWorkspace === 'studio' && <ContentStudio />}
       {activeWorkspace === 'settings' && <SettingsView />}

@@ -27,26 +27,9 @@ type StudioHistoryItem = {
   createdAt: number;
 }
 
-type DraftData = {
-  savedAt: number;
-  [key: string]: unknown;
-}
-
 const STORAGE_KEYS = {
-  drafts: 'alking_studio_drafts',
   history: 'alking_studio_history',
   settings: 'alking_studio_settings'
-}
-
-function getStoredDrafts(): Record<string, DraftData> {
-  if (typeof window === 'undefined') return {}
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEYS.drafts) || '{}')
-  } catch { return {} }
-}
-
-function saveDraft(_tab: string, _data: DraftData): void {
-  // Placeholder for draft saving functionality
 }
 
 function getStoredHistory(): StudioHistoryItem[] {
@@ -750,25 +733,14 @@ function AudioLabView() {
     previousAudioRef.current = audioUrl
   }, [audioUrl])
 
-    const openRouterVoices = [
+    const voices = [
     { id: 'arabic', icon: '🕌', labelEn: 'Arabic', descEn: 'Arabic TTS', labelAr: 'عربي', descAr: 'تحويل نص لعربي', color: 'from-green-500/20' },
     { id: 'english', icon: '🇬🇧', labelEn: 'English', descEn: 'English TTS', labelAr: 'إنجليزي', descAr: 'تحويل نص لإنجليزي', color: 'from-blue-500/20' },
     { id: 'male', icon: '👨', labelEn: 'Male', descEn: 'Male Voice', labelAr: 'ذكر', descAr: 'صوت ذكر', color: 'from-cyan-500/20' },
     { id: 'female', icon: '👩', labelEn: 'Female', descEn: 'Female Voice', labelAr: 'أنثى', descAr: 'صوت أنثى', color: 'from-pink-500/20' }
   ]
 
-  const voices = openRouterVoices
-
-  const getVoiceName = (id: string) => {
-    const v = openRouterVoices.find(v => v.id === id)
-    return v ? (lang === 'ar' ? v.labelAr : v.labelEn) : 'Voice'
-  }
-
   const [selectedVoice, setSelectedVoice] = useState('arabic')
-
-  const handleVoiceChange = (id: string) => {
-    setSelectedVoice(id)
-  }
 
   const generateAudio = async () => {
     if (!text) return;
@@ -792,6 +764,7 @@ function AudioLabView() {
       const data = await resp.json()
       
       if (data.audioData) {
+        // Legacy: server returned base64 audio directly
         const url = `data:audio/mpeg;base64,${data.audioData}`
         setAudioUrl(url)
         setHistory(prev => [{ 
@@ -801,8 +774,64 @@ function AudioLabView() {
           timestamp: Date.now(),
           provider: data.provider
         }, ...prev].slice(0, 10))
+      } else if (data.useWebSpeech && data.content) {
+        // New: use Web Speech API for TTS
+        const utterance = new SpeechSynthesisUtterance(data.content)
+        utterance.lang = selectedVoice === 'arabic' ? 'ar-SA' : 'en-US'
+        utterance.rate = 0.9
+        utterance.pitch = 1.0
+        
+        // Select voice based on preference
+        const voices = window.speechSynthesis.getVoices()
+        if (selectedVoice === 'arabic') {
+          const arabicVoice = voices.find(v => v.lang.startsWith('ar'))
+          if (arabicVoice) utterance.voice = arabicVoice
+        } else if (selectedVoice === 'female') {
+          const femaleVoice = voices.find(v => v.name.includes('Female') || v.name.includes('Zira'))
+          if (femaleVoice) utterance.voice = femaleVoice
+        } else if (selectedVoice === 'male') {
+          const maleVoice = voices.find(v => v.name.includes('Male') || v.name.includes('David'))
+          if (maleVoice) utterance.voice = maleVoice
+        }
+        
+        // Create a temporary blob URL for history tracking
+        const blob = new Blob([data.content], { type: 'text/plain' })
+        const url = URL.createObjectURL(blob)
+        
+        utterance.onend = () => {
+          URL.revokeObjectURL(url)
+        }
+        
+        window.speechSynthesis.speak(utterance)
+        
+        setAudioUrl(url)
+        setHistory(prev => [{ 
+          url, 
+          text: text.substring(0, 50) + '...', 
+          voiceName: (lang === 'ar' ? 'تحدث آلي' : 'Web Speech') + ' - ' + (data.provider || 'AI'), 
+          timestamp: Date.now(),
+          provider: data.provider || 'webspeech'
+        }, ...prev].slice(0, 10))
       } else if (data.error) {
         throw new Error(data.error)
+      } else {
+        // Fallback: use browser Web Speech API directly with original text
+        const utterance = new SpeechSynthesisUtterance(text)
+        utterance.lang = selectedVoice === 'arabic' ? 'ar-SA' : 'en-US'
+        utterance.rate = 0.9
+        window.speechSynthesis.speak(utterance)
+        
+        // Create a minimal placeholder URL for consistency
+        const blob = new Blob([text], { type: 'text/plain' })
+        const url = URL.createObjectURL(blob)
+        setAudioUrl(url)
+        setHistory(prev => [{ 
+          url, 
+          text: text.substring(0, 50) + '...', 
+          voiceName: lang === 'ar' ? 'المتصفح' : 'Browser TTS', 
+          timestamp: Date.now(),
+          provider: 'browser'
+        }, ...prev].slice(0, 10))
       }
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';

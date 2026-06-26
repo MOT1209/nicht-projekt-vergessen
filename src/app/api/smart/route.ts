@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 const TIMEOUT = 30000
-const API_VERSION = '2.1'
 
 async function fetchWithTimeout(url: string, options: RequestInit, timeout = TIMEOUT): Promise<Response> {
   const controller = new AbortController()
@@ -149,44 +148,9 @@ export async function POST(req: NextRequest) {
 
     // === VIDEO GENERATION ===
     else if (task === 'video' || type === 'video') {
-      const openrouterKey = process.env.OPENROUTER_API_KEY || ''
       const falKey = process.env.FAL_AI_KEY || ''
 
-      if (openrouterKey) {
-        try {
-          const resp = await fetchWithTimeout('https://openrouter.ai/api/v1/videos/generations', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${openrouterKey}`,
-              'HTTP-Referer': 'https://termin77-app.netcel.app',
-              'X-Title': 'AlKing Dashboard'
-            },
-            body: JSON.stringify({
-              model: 'runway-gen-2',
-              prompt,
-              duration: 5,
-              aspect_ratio: '16:9'
-            })
-          }, 25000)
-
-          if (resp.ok) {
-            const data = await resp.json()
-            results.videoUrl = data.video?.url
-            results.status = data.status
-            if (results.videoUrl) {
-              results.provider = 'openrouter'
-              success = true
-            }
-          } else {
-            lastError = `openrouter: ${resp.status}`
-          }
-        } catch (e) {
-          lastError = `openrouter: ${e instanceof Error ? e.message : 'Unknown error'}`
-        }
-      }
-
-      if (!success && falKey) {
+      if (falKey) {
         try {
           const resp = await fetchWithTimeout('https://fal.run/fal-ai/pika/v2.2/text-to-video', {
             method: 'POST',
@@ -218,82 +182,71 @@ export async function POST(req: NextRequest) {
       }
 
       if (!success) {
-        results.status = 'processing'
-        results.provider = 'openrouter'
-        success = true
+        results.error = lastError || 'No video generation provider available'
+        results.status = 'failed'
       }
     }
 
     // === TEXT TO SPEECH (TTS) ===
     else if (task === 'tts' || task === 'audio' || type === 'tts') {
-      const openrouterKey = process.env.OPENROUTER_API_KEY || ''
+      // Use OpenRouter chat to generate SSML/text for TTS, then rely on client-side
+      // Web Speech API as a reliable fallback. The actual TTS audio generation
+      // can use the Gemini API or a dedicated TTS service.
+      const geminiKey = process.env.GEMINI_API_KEY || ''
 
-      if (openrouterKey) {
+      if (geminiKey) {
         try {
-          const resp = await fetchWithTimeout('https://openrouter.ai/api/v1/audio/speech', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${openrouterKey}`,
-              'HTTP-Referer': 'https://termin77-app.netcel.app',
-              'X-Title': 'AlKing Dashboard'
+          const resp = await fetchWithTimeout(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: `Convert the following text to a natural Arabic voiceover script (SSML-like format). Keep only the spoken text, no extra commentary. Text: ${prompt.slice(0, 1000)}` }] }],
+                generationConfig: { temperature: 0.3, maxOutputTokens: 500 }
+              })
             },
-            body: JSON.stringify({
-              model: 'suno/bark',
-              input: prompt.slice(0, 1000),
-              voice: 'arabic',
-              response_format: 'mp3'
-            })
-          }, 15000)
+            15000
+          )
 
           if (resp.ok) {
-            const audioBuffer = await resp.arrayBuffer()
-            if (audioBuffer.byteLength > 1000) {
-              results.audioData = Buffer.from(audioBuffer).toString('base64')
-              results.provider = 'openrouter'
-              results.format = 'audio/mpeg'
+            const data = await resp.json()
+            const voiceText = data.candidates?.[0]?.content?.parts?.[0]?.text
+            if (voiceText) {
+              results.content = voiceText
+              results.provider = 'gemini'
+              results.format = 'text'
+              // Signal client to use Web Speech API as the renderer
+              results.useWebSpeech = true
               success = true
             }
           } else {
-            lastError = `openrouter: ${resp.status}`
+            lastError = `gemini: ${resp.status}`
           }
         } catch (e) {
-          lastError = `openrouter: ${e instanceof Error ? e.message : 'Unknown error'}`
+          lastError = `gemini: ${e instanceof Error ? e.message : 'Unknown error'}`
         }
       }
 
       if (!success) {
-        try {
-          const resp = await fetchWithTimeout('https://api.coqui.ai/v2/tts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: prompt.slice(0, 1000), language: 'arabic' })
-          }, 15000)
-
-          if (resp.ok) {
-            const audioBuffer = await resp.arrayBuffer()
-            if (audioBuffer.byteLength > 1000) {
-              results.audioData = Buffer.from(audioBuffer).toString('base64')
-              results.provider = 'coqui'
-              results.format = 'audio/mpeg'
-              success = true
-            }
-          } else {
-            lastError = `coqui: ${resp.status}`
-          }
-        } catch (e) {
-          lastError = `coqui: ${e instanceof Error ? e.message : 'Unknown error'}`
-        }
+        // Fallback: return the original text and let client use Web Speech API directly
+        results.content = prompt.slice(0, 1000)
+        results.provider = 'client-fallback'
+        results.useWebSpeech = true
+        success = true
       }
     }
 
     // === OCR ===
     else if (task === 'ocr') {
-      try {
-        const apiKey = process.env.OCR_SPACE_API_KEY || 'helloworld'
-        const formData = body.image
-        if (formData) {
-          const base64Image = formData.replace(/^data:image\/\w+;base64,/, '')
+      const imageData = body.image
+      if (!imageData) {
+        results.error = 'No image data provided. Send base64 image in "image" field.'
+        results.provider = 'error'
+      } else {
+        try {
+          const apiKey = process.env.OCR_SPACE_API_KEY || 'helloworld'
+          const base64Image = imageData.replace(/^data:image\/\w+;base64,/, '')
           const resp = await fetchWithTimeout('https://api.ocr.space/parse/image', {
             method: 'POST',
             headers: { 'apikey': apiKey, 'Content-Type': 'application/json' },
@@ -306,11 +259,15 @@ export async function POST(req: NextRequest) {
               results.text = data.ParsedResults?.[0]?.ParsedText
               results.provider = 'ocr.space'
               success = true
+            } else {
+              lastError = `ocr.space: ${data.ErrorMessage?.[0]?.ErrorMessage || 'Processing error'}`
             }
+          } else {
+            lastError = `ocr.space: ${resp.status}`
           }
+        } catch (e) {
+          lastError = `OCR: ${e instanceof Error ? e.message : 'Unknown error'}`
         }
-      } catch (e) {
-        lastError = `OCR: ${e instanceof Error ? e.message : 'Unknown error'}`
       }
     }
 
